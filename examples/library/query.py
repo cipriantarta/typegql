@@ -2,8 +2,8 @@ from typing import List, TypeVar, Generic
 
 from graphql import GraphQLResolveInfo
 
-from aiograph.core.graph import Graph, Connection, GraphInfo, GraphArgument
-from aiograph.core.types import ID
+from typegql.core.graph import Graph, Connection, GraphInfo, GraphArgument, InputGraph
+from typegql.core.types import ID
 from examples.library.types import Author, Category
 from examples.library.types import Book
 from examples.library import db
@@ -44,7 +44,7 @@ class Query(Graph):
     async def resolve_categories(self, selections):
         return [Category(**data) for data in db.get('categories')]
 
-    async def resolve_books_connection(self, info, for_authors: List[ID]=None):
+    async def resolve_books_connection(self, info: GraphQLResolveInfo, for_authors: List[ID] = None):
         if for_authors:
             data = [Book(**book) for book in db.get('books') if book['author_id'] in [int(_id) for _id in for_authors]]
         else:
@@ -55,3 +55,18 @@ class Query(Graph):
             'edges': [{
                 'node': node
             } for node in data]}
+
+
+class Mutation(InputGraph):
+    create_books: List[ID]
+
+    class Meta:
+        create_books = GraphInfo(required=True,
+                                 description='Create new `Book` objects and retrieve a list of ids for the '
+                                             'created objects',
+                                 arguments=[
+                                     GraphArgument[List[Book]]('data', is_input=True)
+                                 ])
+
+    async def mutate_create_books(self, info: GraphQLResolveInfo, data):
+        return [1]

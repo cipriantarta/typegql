@@ -3,7 +3,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import List
 
-from aiograph.core.graph import Graph, ID, GraphInfo, GraphArgument
+from typegql.core.graph import Graph, ID, GraphInfo
 from examples.library import db
 
 

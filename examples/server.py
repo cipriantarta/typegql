@@ -4,14 +4,14 @@ from graphql import GraphQLError
 from sanic import Sanic
 from sanic.response import json, html
 
-from aiograph.core.schema import Schema
-from examples.library.query import Query
+from typegql.core.schema import Schema
+from examples.library.query import Query, Mutation
 
 from examples.library.template import TEMPLATE
 
 logger = logging.getLogger('sanic.error')
 app = Sanic()
-schema = Schema(Query)
+schema = Schema(Query, Mutation)
 
 
 @app.route('', methods=['GET'])
@@ -23,7 +23,7 @@ async def default(request):
 async def default(request):
     query = request.args.get('query') if request.method.lower() == 'get' else request.json.get('query')
     try:
-        result = await schema.run(query, Query())
+        result = await schema.run(query)
     except GraphQLError as e:
         logger.exception(e)
         return json({'data': str(e)})

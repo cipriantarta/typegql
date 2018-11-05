@@ -1,6 +1,6 @@
 import pytest
 
-from aiograph.core.schema import Schema
+from typegql.core.schema import Schema
 from examples.library.query import Query
 
 

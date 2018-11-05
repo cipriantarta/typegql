@@ -1,7 +1,7 @@
 .. role:: python(code)
     :language: python
 
-AIOGraph
+TypeGQL
 ========
 
 A Python `GraphQL <https://graphql.org>`_ library that makes use of type hinting and concurrency support with the new async/await syntax.
@@ -18,38 +18,48 @@ Installation
 
 .. code-block:: python
 
-    pip install git+https://github.com/cipriantarta/aiograph
+    pip install typegql
 
 
 Usage
 =====
 
-The following demonstrates how to use **aiograph** for implementing a *GraphQL API* for a library of books.
-The example can be found in *aiograph/core/examples* and you can run it with Sanic by executing ``python <path_to_example>/server.py``
+The following demonstrates how to use **typegql** for implementing a *GraphQL API* for a library of books.
+The example can be found in *typegql/core/examples* and you can run it with Sanic by executing ``python <path_to_example>/server.py``
 
 Define your query
 -----------------
 
 .. code-block:: python
 
-    from aiograph.core.types import Graph, Connection
-    from aiograph.examples.library.types import Author, Category
-    from aiograph.examples.library.types import Book
-    from aiograph.examples.library import db
+    from typing import List
+    from typegql.core.graph import Graph, Connection
+    from typegql.examples.library.types import Author, Category
+    from typegql.examples.library.types import Book
+    from typegql.examples.library import db
 
     class Query(Graph):
-        books: Connection[Book]
-        authors: Connection[Author]
-        categories: Connection[Category]
+        books: List[Book]
+        authors: List[Author]
+        categories: List[Category]
 
-        async def resolve_authors(self, selections):
+        books_connection: Connection[Book]
+
+        async def resolve_authors(self, info, **kwargs):
             return db.get('authors')
 
-        async def resolve_books(self, selections, name=None):
+        async def resolve_books(self, info, **kwargs):
             return db.get('books')
 
-        async def resolve_categories(self, selections):
+        async def resolve_categories(self, info, **kwargs):
             return db.get('categories')
+
+       async def resolve_books_connection(self, info, **kwargs):
+            data = db.get('books')
+            return {
+                'edges': [{
+                    'node': node
+                } for node in data]}
 
 
 Define your types
@@ -57,27 +67,13 @@ Define your types
 
 .. code-block:: python
 
+    from datetime import datetime
+    from decimal import Decimal
     from enum import Enum
     from typing import List
 
-    from aiograph.core.types import Graph, Connection
-    from aiograph.examples.library import db
-
-
-    class Book(Graph):
-        id: int
-        author_id: int
-        title: str
-        author: Connection['Author']
-        categories: Connection[List['Category']]
-
-        async def resolve_author(self, selections, name=None):
-            data = filter(lambda x: x['id'] == self.author_id, db.get('authors'))
-            return next(data)
-
-        async def resolve_categories(self, selections, name=None):
-            data = filter(lambda x: x['id'] in self.categories, db.get('categories'))
-            return list(data)
+    from typegql.core.graph import Graph, ID, GraphInfo
+    from examples.library import db
 
 
     class Gender(Enum):
@@ -85,17 +81,61 @@ Define your types
         FEMALE = 'female'
 
 
+    class GeoLocation:
+        latitude: Decimal
+        longitude: Decimal
+
+        def __init__(self, latitude, longitude):
+            self.latitude = latitude
+            self.longitude = longitude
+
+
     class Author(Graph):
-        id: int
+        id: ID
         name: str
-        books: Connection[Book]
         gender: Gender
+        geo: GeoLocation
 
 
     class Category(Graph):
-        id: str
+        id: ID
         name: str
-        books: Connection[Book]
+
+
+    class Book(Graph):
+        id: ID
+        author_id: ID
+        title: str
+        author: Author
+        categories: List[Category]
+        published: datetime
+        tags: List[str]
+
+        class Meta:
+            description = 'Just a book'
+            id = GraphInfo(required=True, description='Book unique identifier')
+
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            self.published = datetime.strptime(self.published, '%Y-%m-%d %H:%M:%S')
+
+        async def resolve_author(self, info):
+            data = filter(lambda x: x['id'] == self.author_id, db.get('authors'))
+            data = next(data)
+            author = Author(**data)
+            author.gender = Gender[author.gender.upper()].value
+            if 'geo' in data:
+                author.geo = GeoLocation(**data.get('geo'))
+            return author
+
+        async def resolve_categories(self, selections, name=None):
+            data = filter(lambda x: x['id'] in self.categories, db.get('categories'))
+            for d in data:  # showcasing async generator
+                yield Category(**d)
+
+        def resolve_tags(self, selections):
+            return ['testing', 'purpose']
+
 
 
 Run your query
@@ -103,12 +143,31 @@ Run your query
 
 .. code-block:: python
 
-    from aiograph.core.schema import Schema
-    from aiograph.examples.library.query import Query
+    from typegql.core.schema import Schema
+    from examples.library.query import Query
+
+
+    schema = Schema(Query)
+    query = '''
+    query BooksConnection {
+      books_connection {
+        edges {
+          node {
+            id
+            title
+            published
+            author {
+              id
+              name
+            }
+          }
+        }
+      }
+    }
+    '''
 
     async def run():
-        schema = Schema(Query)
-        result = await schema.run(graph)
+        result = await schema.run(query)
 
 
 Change Log

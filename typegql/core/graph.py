@@ -33,22 +33,25 @@ class Graph:
             setattr(self, name, kwargs.get(name))
 
     @staticmethod
-    def get_fields(graph: Type[Graph]):
+    def get_fields(graph: Type[Graph], is_mutation=False):
         result = dict()
         meta = getattr(graph, 'Meta', None)
         for name, _type in get_type_hints(graph).items():
             info = getattr(meta, name, None)
-            graph_type = Graph.map_type(_type, info=info)
+            graph_type = Graph.map_type(_type, info=info, is_mutation=is_mutation)
             if not graph_type:
                 continue
 
             args = Graph.arguments(info)
-            result[name] = graphql.GraphQLField(graph_type, description=getattr(info, 'description', ''), args=args)
+            if is_mutation:
+                result[name] = graph_type
+            else:
+                result[name] = graphql.GraphQLField(graph_type, description=getattr(info, 'description', ''), args=args)
 
         return result
 
     @staticmethod
-    def map_type(_type: Any, info: GraphInfo=None):
+    def map_type(_type: Any, info: GraphInfo = None, is_mutation=False):
         if isinstance(_type, graphql.GraphQLType):
             return _type
         try:
@@ -62,12 +65,6 @@ class Graph:
         if Graph.is_connection(_type):
             return Connection.get_fields(_type)
 
-        result = _TYPES.get(type_name)
-        result = Graph.add_info(result, info)
-
-        if result:
-            return result
-
         if Graph.is_enum(_type):
             if type_name in _TYPES:
                 return _TYPES.get(type_name)
@@ -76,11 +73,13 @@ class Graph:
             return Graph.add_info(enum_type, info)
 
         if Graph.is_list(_type):
-            inner = Graph.map_type(_type.__args__[0])
+            inner = Graph.map_type(_type.__args__[0], info=info, is_mutation=is_mutation)
             return graphql.GraphQLList(inner)
 
         if Graph.is_graph(_type):
-            return Graph.build_object_type(type_name, _type)
+            return Graph.build_object_type(type_name, _type, is_mutation)
+
+        return Graph.add_info(_TYPES.get(type_name), info)
 
     @staticmethod
     def is_list(_type: Any) -> bool:
@@ -111,11 +110,16 @@ class Graph:
             return False
 
     @staticmethod
-    def build_object_type(type_name, _type):
+    def build_object_type(type_name, _type, is_mutation=False):
+        if is_mutation:
+            type_name = f'{type_name}Mutation'
         if type_name in _TYPES:
             return _TYPES[type_name]
-        fields = Graph.get_fields(_type)
-        graph_type = graphql.GraphQLObjectType(type_name, fields=fields)
+        fields = Graph.get_fields(_type, is_mutation=is_mutation)
+        if not is_mutation:
+            graph_type = graphql.GraphQLObjectType(type_name, fields=fields)
+        else:
+            graph_type = graphql.GraphQLInputObjectType(type_name, fields=fields)
         _TYPES[type_name] = graph_type
         return graph_type
 
@@ -136,7 +140,7 @@ class Graph:
             if not isinstance(arg, GraphArgument):
                 continue
 
-            _type = Graph.map_type(arg.type)
+            _type = Graph.map_type(arg.type, is_mutation=arg.is_input)
             if arg.required:
                 _type = graphql.GraphQLNonNull(_type)
             result[arg.name] = graphql.GraphQLArgument(_type, description=arg.description)
@@ -177,7 +181,7 @@ class Connection(Graph, Generic[T]):
             _TYPES['Connection'] = graphql.GraphQLInterfaceType('Connection', Graph.get_fields(Connection))
 
     @staticmethod
-    def get_fields(graph: Type[Graph]):
+    def get_fields(graph: Type[Graph], is_mutation=False):
         Connection.build()
         connection_class = graph.__origin__
         wrapped = graph.__args__[0]
@@ -223,9 +227,16 @@ class Connection(Graph, Generic[T]):
 @dataclasses.dataclass
 class GraphArgument(Generic[T]):
     name: str
-    description: str = dataclasses.field(default='')
-    required: bool = dataclasses.field(default=False)
+    description: str = ''
+    required: bool = False
+    is_input: bool = False
 
     @property
     def type(self):
         return self.__orig_class__.__args__[0]
+
+
+class InputGraph(Graph):
+    @staticmethod
+    def get_fields(graph: Type[InputGraph], is_mutation=False):
+        return Graph.get_fields(graph, False)
