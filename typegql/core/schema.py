@@ -1,5 +1,5 @@
 import logging
-from typing import Type, Callable
+from typing import Type, Callable, Any
 
 from graphql import GraphQLSchema, GraphQLObjectType, graphql, OperationType
 
@@ -61,10 +61,11 @@ class Schema(GraphQLSchema):
 
         super().__init__(query, mutation, subscription)
 
-    async def run(self, query: str, root: Graph = None):
+    async def run(self, query: str, root: Graph = None, operation: str=None, context: Any=None, variables=None):
         if query.startswith('mutation') and not root:
             root = self.mutation()
         elif not root:
             root = self.query()
-        result = await graphql(self, query, root_value=root, field_resolver=_field_resolver)
+        result = await graphql(self, query, root_value=root, field_resolver=_field_resolver, operation_name=operation,
+                               context_value=context, variable_values=variables)
         return result

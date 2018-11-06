@@ -2,8 +2,7 @@ from typing import List, TypeVar, Generic
 
 from graphql import GraphQLResolveInfo
 
-from typegql.core.graph import Graph, Connection, GraphInfo, GraphArgument, InputGraph
-from typegql.core.types import ID
+from typegql import Graph, Connection, GraphInfo, GraphArgument, InputGraph, ID
 from examples.library.types import Author, Category
 from examples.library.types import Book
 from examples.library import db
