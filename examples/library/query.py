@@ -22,7 +22,7 @@ class Query(Graph):
     books_connection: CustomConnection[Book]
 
     class Meta:
-        authors = ('Author', 'Collection of book authors')
+        authors = GraphInfo(description='Collection of book authors')
         books_connection = GraphInfo(description='GraphQL connection that returns a collection of `Book`s',
                                      arguments=[
                                          GraphArgument[List[ID]](name='for_authors',
@@ -51,6 +51,9 @@ class Query(Graph):
         total = len(data)
         return {
             'total_count': total,
+            'page_info': {
+                'has_next': False
+            },
             'edges': [{
                 'node': node
             } for node in data]}

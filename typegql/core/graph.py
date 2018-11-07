@@ -5,6 +5,7 @@ from enum import Enum
 from typing import get_type_hints, Type, List, Any, TypeVar, Generic
 
 import graphql
+from graphql.pyutils import snake_to_camel
 
 from .types import DateTime, ID
 
@@ -24,6 +25,7 @@ class Graph:
         'str': graphql.GraphQLString,
         'datetime': DateTime(),
         'float': graphql.GraphQLFloat,
+        'bool': graphql.GraphQLBoolean
     }
 
     def __init__(self, **kwargs):
@@ -33,19 +35,23 @@ class Graph:
             setattr(self, name, kwargs.get(name))
 
     @classmethod
-    def get_fields(cls, graph: Type[Graph], is_mutation=False):
+    def get_fields(cls, graph: Type[Graph], is_mutation=False, camelcase=True):
         result = dict()
         meta = getattr(graph, 'Meta', None)
         for name, _type in get_type_hints(graph).items():
-            info = getattr(meta, name, None)
-            if not isinstance(info, GraphInfo):
-                info = GraphInfo()
-            graph_type = cls.map_type(_type, info=info, is_mutation=is_mutation)
+            info = getattr(meta, name, GraphInfo())
+            assert isinstance(info, GraphInfo), f'{graph.__name__} info for `{name}` MUST be of type `GraphInfo`'
+            graph_type = cls.map_type(_type, is_mutation=is_mutation)
             if not graph_type:
                 continue
 
+            if info.required:
+                graph_type = graphql.GraphQLNonNull(graph_type)
+
             args = cls.arguments(info)
             field_name = info.name or name
+            if camelcase:
+                field_name = snake_to_camel(field_name, upper=False)
             if is_mutation:
                 result[field_name] = graph_type
             else:
@@ -56,7 +62,7 @@ class Graph:
         return result
 
     @classmethod
-    def map_type(cls, _type: Any, info: GraphInfo = None, is_mutation=False):
+    def map_type(cls, _type: Any, is_mutation=False):
         if isinstance(_type, graphql.GraphQLType):
             return _type
         try:
@@ -75,16 +81,16 @@ class Graph:
                 return cls._types.get(type_name)
             enum_type = graphql.GraphQLEnumType(type_name, _type)
             cls._types[type_name] = enum_type
-            return cls.add_info(enum_type, info)
+            return enum_type
 
         if Graph.is_list(_type):
-            inner = cls.map_type(_type.__args__[0], info=info, is_mutation=is_mutation)
+            inner = cls.map_type(_type.__args__[0], is_mutation=is_mutation)
             return graphql.GraphQLList(inner)
 
         if Graph.is_graph(_type):
-            return cls.build_object_type(type_name, _type, is_mutation)
+            return cls.build_object_type(type_name, _type, is_mutation=is_mutation)
 
-        return cls.add_info(cls._types.get(type_name), info)
+        return cls._types.get(type_name)
 
     @staticmethod
     def is_list(_type: Any) -> bool:
@@ -115,7 +121,7 @@ class Graph:
             return False
 
     @classmethod
-    def build_object_type(cls, type_name, _type, is_mutation=False):
+    def build_object_type(cls, type_name, _type, info: GraphInfo=None, is_mutation=False):
         if is_mutation:
             type_name = f'{type_name}Mutation'
         if type_name in cls._types:
@@ -125,17 +131,11 @@ class Graph:
             graph_type = graphql.GraphQLObjectType(type_name, fields=fields)
         else:
             graph_type = graphql.GraphQLInputObjectType(type_name, fields=fields)
+        if isinstance(info, GraphInfo):
+            if info.required:
+                graph_type = graphql.GraphQLNonNull(graph_type)
         cls._types[type_name] = graph_type
         return graph_type
-
-    @classmethod
-    def add_info(cls, _type: graphql.GraphQLNamedType, info: GraphInfo):
-        if not _type or not isinstance(info, GraphInfo):
-            return _type
-        _type.description = info.description or _type.description
-        if info.required:
-            return graphql.GraphQLNonNull(_type)
-        return _type
 
     @classmethod
     def arguments(cls, info: GraphInfo):
@@ -166,14 +166,28 @@ class Edge(Graph, Generic[T]):
     cursor: str
 
     class Meta:
-        node = GraphInfo(required=True, description='Node identifier')
+        node = GraphInfo(required=True, description='Scalar representing your data')
+        cursor = GraphInfo(required=True, description='Pagination cursor')
+
+
+class PageInfo(Graph):
+    has_next: bool
+    has_previous: bool
+    start_cursor: str
+    end_cursor: str
+
+    class Meta:
+        has_next = GraphInfo(required=True, description='When paginating forwards, are there more items?')
+        has_previous = GraphInfo(required=True, description='When paginating backwards, are there more items?')
 
 
 class Connection(Graph, Generic[T]):
     edges: List[Edge[T]]
+    page_info: PageInfo
 
     class Meta:
         edges = GraphInfo(required=True, description='Connection edges')
+        page_info = GraphInfo(required=True, description='Pagination information')
 
     @classmethod
     def build(cls):
@@ -181,23 +195,33 @@ class Connection(Graph, Generic[T]):
             cls._types['Node'] = graphql.GraphQLInterfaceType('Node', super().get_fields(Node))
         if 'Edge' not in cls._types:
             cls._types['Edge'] = graphql.GraphQLInterfaceType('Edge', super().get_fields(Edge))
+        if 'PageInfo' not in cls._types:
+            cls._types['PageInfo'] = graphql.GraphQLObjectType('PageInfo', super().get_fields(PageInfo))
         if 'Connection' not in cls._types:
             cls._types['Connection'] = graphql.GraphQLInterfaceType('Connection', super().get_fields(Connection))
 
     @classmethod
-    def get_fields(cls, graph: Type[Graph], is_mutation=False):
+    def get_fields(cls, graph: Type[Graph], is_mutation=False, camelcase=True):
         cls.build()
         connection_class = graph.__origin__
         wrapped = graph.__args__[0]
 
         fields = {}
+        meta = getattr(graph, 'Meta', None)
         for name, _type in get_type_hints(connection_class).items():
-            if Graph.is_list(_type):
+            info = getattr(meta, name, GraphInfo())
+            if Graph.is_list(_type) and _type.__args__[0] is Edge[T]:
                 inner = _type.__args__[0]
-                if inner is Edge[T]:
-                    fields[name] = graphql.GraphQLList(Connection.get_edge_field(inner.__origin__, wrapped))
-                    continue
-            fields[name] = cls.map_type(_type)
+                graph_type = graphql.GraphQLList(cls.get_edge_field(inner.__origin__, wrapped, camelcase=camelcase))
+            else:
+                graph_type = cls.map_type(_type)
+            if info.required:
+                graph_type = graphql.GraphQLNonNull(graph_type)
+
+            field_name = info.name or name
+            if camelcase:
+                field_name = snake_to_camel(field_name, upper=False)
+            fields[field_name] = graphql.GraphQLField(graph_type, description=info.description)
 
         type_name = f'{wrapped.__name__}Connection'
         return graphql.GraphQLObjectType(type_name,
@@ -205,13 +229,21 @@ class Connection(Graph, Generic[T]):
                                          interfaces=(cls._types.get('Connection'),))
 
     @classmethod
-    def get_edge_field(cls, edge_type, inner: Type[T]):
+    def get_edge_field(cls, edge_type, inner: Type[T], camelcase=True):
         fields = dict()
+        meta = getattr(edge_type, 'Meta', None)
         for name, _type in get_type_hints(edge_type).items():
+            info = getattr(meta, name, GraphInfo())
             if _type is Node[T]:
-                fields[name] = cls.get_node_fields(inner)
-                continue
-            fields[name] = cls.map_type(_type)
+                graph_type = cls.get_node_fields(inner)
+            else:
+                graph_type = cls.map_type(_type)
+            if info.required:
+                graph_type = graphql.GraphQLNonNull(graph_type)
+            field_name = info.name or name
+            if camelcase:
+                field_name = snake_to_camel(field_name, upper=False)
+            fields[field_name] = graph_type
 
         return graphql.GraphQLNonNull(graphql.GraphQLObjectType(
             f'{inner.__name__}Edge',
@@ -221,11 +253,11 @@ class Connection(Graph, Generic[T]):
 
     @classmethod
     def get_node_fields(cls, _type: Type[T]):
-        return graphql.GraphQLNonNull(graphql.GraphQLObjectType(
+        return graphql.GraphQLObjectType(
             f'{_type.__name__}Node',
             fields=super().get_fields(_type),
             interfaces=(cls._types.get('Node'),)
-        ))
+        )
 
 
 @dataclasses.dataclass
@@ -242,5 +274,5 @@ class GraphArgument(Generic[T]):
 
 class InputGraph(Graph):
     @classmethod
-    def get_fields(cls, graph: Type[InputGraph], is_mutation=False):
-        return super().get_fields(graph, is_mutation)
+    def get_fields(cls, graph: Type[InputGraph], is_mutation=False, camelcase=True):
+        return super().get_fields(graph, is_mutation, camelcase)
