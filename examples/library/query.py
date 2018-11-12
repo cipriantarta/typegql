@@ -43,12 +43,22 @@ class Query(Graph):
     async def resolve_categories(self, selections):
         return [Category(**data) for data in db.get('categories')]
 
-    async def resolve_books_connection(self, info: GraphQLResolveInfo, for_authors: List[ID] = None):
+    async def resolve_books_connection(self,
+                                       info: GraphQLResolveInfo,
+                                       for_authors: List[ID] = None,
+                                       first: int = None,
+                                       last: int = None,
+                                       **kwargs):
         if for_authors:
             data = [Book(**book) for book in db.get('books') if book['author_id'] in [int(_id) for _id in for_authors]]
         else:
             data = [Book(**book) for book in db.get('books')]
         total = len(data)
+        if first:
+            data = data[:first]
+        if last:
+            data = data[-last:]
+
         return {
             'total_count': total,
             'page_info': {

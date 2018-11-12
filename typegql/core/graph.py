@@ -15,7 +15,7 @@ class GraphInfo:
     name: str = dataclasses.field(default='')
     required: bool = dataclasses.field(default=False)
     description: str = dataclasses.field(default='')
-    arguments: List[GraphArgument] = dataclasses.field(default_factory=tuple)
+    arguments: List[GraphArgument] = dataclasses.field(default_factory=list)
 
 
 class Graph:
@@ -44,6 +44,9 @@ class Graph:
             graph_type = cls.map_type(_type, is_mutation=is_mutation)
             if not graph_type:
                 continue
+
+            if cls.is_connection(_type):
+                info.arguments.extend(cls.page_arguments())
 
             if info.required:
                 graph_type = graphql.GraphQLNonNull(graph_type)
@@ -149,6 +152,15 @@ class Graph:
                 _type = graphql.GraphQLNonNull(_type)
             result[arg.name] = graphql.GraphQLArgument(_type, description=arg.description)
         return result
+
+    @classmethod
+    def page_arguments(cls):
+        return [
+            GraphArgument[int]('first', description='Retrieve only the first `n` nodes of this connection'),
+            GraphArgument[int]('last', description='Retrieve only the last `n` nodes of this connection'),
+            GraphArgument[str]('before', description='Retrieve nodes for this connection before this cursor'),
+            GraphArgument[str]('after', description='Retrieve nodes for this connection after this cursor')
+        ]
 
 
 T = TypeVar('T')
