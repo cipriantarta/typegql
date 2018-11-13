@@ -51,6 +51,9 @@ class Schema(GraphQLSchema):
         field_name = info.field_name
         if self.camelcase:
             field_name = camel_to_snake(field_name)
+            for key in kwargs.keys():
+                if key in info.parent_type.fields[field_name].args:
+                    kwargs[camel_to_snake(key)] = kwargs.pop(key)
 
         if Graph.is_graph(source.__class__):
             _type = source.__annotations__.get(field_name)
