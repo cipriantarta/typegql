@@ -1,5 +1,6 @@
 import base64
 from datetime import datetime
+from typing import Dict
 
 import graphql
 from graphql.language import ast
@@ -47,3 +48,34 @@ class ID(graphql.GraphQLScalarType):
     @classmethod
     def decode(cls, value):
         return base64.b64decode(value).decode()
+
+
+class Dictionary(graphql.GraphQLScalarType):
+    def __init__(self, name='Dictionary'):
+        super().__init__(
+            name=name,
+            description='Dictionary type / HashMap',
+            serialize=Dictionary.serialize,
+            parse_value=Dictionary.parse_value,
+            parse_literal=Dictionary.parse_literal,
+        )
+
+    @staticmethod
+    def serialize(value: Dict):
+        assert isinstance(value, dict), 'dict value expected'
+        return value
+
+    @staticmethod
+    def parse_literal(node):
+        if isinstance(node, ast.StringValueNode):
+            try:
+                return eval(node.value)
+            except ValueError:
+                pass
+
+    @staticmethod
+    def parse_value(value: str):
+        try:
+            return eval(value)
+        except ValueError:
+            pass

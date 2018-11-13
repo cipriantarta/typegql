@@ -7,7 +7,7 @@ from typing import get_type_hints, Type, List, Any, TypeVar, Generic
 import graphql
 from graphql.pyutils import snake_to_camel
 
-from .types import DateTime, ID
+from .types import DateTime, ID, Dictionary
 
 
 @dataclasses.dataclass
@@ -21,11 +21,12 @@ class GraphInfo:
 class Graph:
     _types = {
         'ID': graphql.GraphQLID,
+        'bool': graphql.GraphQLBoolean,
         'int': graphql.GraphQLInt,
+        'float': graphql.GraphQLFloat,
         'str': graphql.GraphQLString,
         'datetime': DateTime(),
-        'float': graphql.GraphQLFloat,
-        'bool': graphql.GraphQLBoolean
+        'Dict': Dictionary()
     }
 
     def __init__(self, **kwargs):
@@ -51,7 +52,7 @@ class Graph:
             if info.required:
                 graph_type = graphql.GraphQLNonNull(graph_type)
 
-            args = cls.arguments(info)
+            args = cls.arguments(info, camelcase)
             field_name = info.name or name
             if camelcase:
                 field_name = snake_to_camel(field_name, upper=False)
@@ -141,7 +142,7 @@ class Graph:
         return graph_type
 
     @classmethod
-    def arguments(cls, info: GraphInfo):
+    def arguments(cls, info: GraphInfo, camelcase=True):
         result: graphql.GraphQLArgumentMap = dict()
         for arg in getattr(info, 'arguments', []):
             if not isinstance(arg, GraphArgument):
@@ -150,7 +151,8 @@ class Graph:
             _type = cls.map_type(arg.type, is_mutation=arg.is_input)
             if arg.required:
                 _type = graphql.GraphQLNonNull(_type)
-            result[arg.name] = graphql.GraphQLArgument(_type, description=arg.description)
+            arg_name = snake_to_camel(arg.name, False) if camelcase else arg.name
+            result[arg_name] = graphql.GraphQLArgument(_type, description=arg.description)
         return result
 
     @classmethod
@@ -214,6 +216,9 @@ class Connection(Graph, Generic[T]):
 
     @classmethod
     def get_fields(cls, graph: Type[Graph], is_mutation=False, camelcase=True):
+        if not Graph.is_connection(graph):
+            return super().get_fields(graph, is_mutation=is_mutation, camelcase=camelcase)
+
         cls.build()
         connection_class = graph.__origin__
         wrapped = graph.__args__[0]
