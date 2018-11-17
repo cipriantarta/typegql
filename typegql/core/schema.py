@@ -50,17 +50,13 @@ class Schema(GraphQLSchema):
     def _field_resolver(self, source, info, **kwargs):
         field_name = info.field_name
         if self.camelcase:
-            field_name = camel_to_snake(field_name)
-            for key in kwargs.keys():
+            snake_args = dict()
+            keys = [k for k in kwargs.keys()]
+            for key in keys:
                 if key in info.parent_type.fields[field_name].args:
-                    kwargs[camel_to_snake(key)] = kwargs.pop(key)
-
-        if Graph.is_graph(source.__class__):
-            _type = source.__annotations__.get(field_name)
-            if Graph.is_connection(_type):
-                method = getattr(_type, 'resolve', None)
-                if method:
-                    return method(source, field_name, _type.__args__[0], info, **kwargs)
+                    snake_args[camel_to_snake(key)] = kwargs.pop(key)
+            field_name = camel_to_snake(field_name)
+            kwargs.update(snake_args)
 
         if info.operation.operation == OperationType.MUTATION:
             try:
@@ -68,6 +64,15 @@ class Schema(GraphQLSchema):
                 return mutation(info, **kwargs)
             except AttributeError:
                 return
+
+        if Graph.is_graph(source.__class__):
+            _type = source.__annotations__.get(field_name)
+            if Graph.is_connection(_type):
+                method = getattr(_type, 'resolve', None)
+                if method:
+                    return method(source, field_name, _type.__args__[0], info, **kwargs)
+            elif Graph.is_graph(_type):
+                return _type()
 
         value = (
             source.get(field_name)
