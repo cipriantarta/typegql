@@ -46,7 +46,7 @@ class Book(Graph):
 
     class Meta:
         description = 'Just a book'
-        id = GraphInfo(required=True, description='Book unique identifier')
+        id = GraphInfo(required=True, use_in_mutation=False, description='Book unique identifier')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

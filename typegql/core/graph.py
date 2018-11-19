@@ -14,6 +14,7 @@ from .types import DateTime, ID, Dictionary
 class GraphInfo:
     name: str = dataclasses.field(default='')
     required: bool = dataclasses.field(default=False)
+    use_in_mutation: bool = dataclasses.field(default=True)
     description: str = dataclasses.field(default='')
     arguments: List[GraphArgument] = dataclasses.field(default_factory=list)
 
@@ -42,6 +43,10 @@ class Graph:
         for name, _type in get_type_hints(graph).items():
             info = getattr(meta, name, GraphInfo())
             assert isinstance(info, GraphInfo), f'{graph.__name__} info for `{name}` MUST be of type `GraphInfo`'
+
+            if is_mutation and not info.use_in_mutation:
+                continue
+
             graph_type = cls.map_type(_type, is_mutation=is_mutation)
             if not graph_type:
                 continue
