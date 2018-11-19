@@ -4,6 +4,7 @@ from typing import Type, Callable, Any
 from graphql import GraphQLSchema, GraphQLObjectType, graphql, OperationType, validate_schema
 from graphql.pyutils import camel_to_snake
 
+from typegql.core.execution import TGQLExecutionContext
 from typegql.core.graph import Graph
 
 logger = logging.getLogger(__name__)
@@ -50,13 +51,7 @@ class Schema(GraphQLSchema):
     def _field_resolver(self, source, info, **kwargs):
         field_name = info.field_name
         if self.camelcase:
-            snake_args = dict()
-            keys = [k for k in kwargs.keys()]
-            for key in keys:
-                if key in info.parent_type.fields[field_name].args:
-                    snake_args[camel_to_snake(key)] = kwargs.pop(key)
             field_name = camel_to_snake(field_name)
-            kwargs.update(snake_args)
 
         if info.operation.operation == OperationType.MUTATION:
             try:
@@ -89,7 +84,13 @@ class Schema(GraphQLSchema):
             root = self.mutation()
         elif not root:
             root = self.query()
-        result = await graphql(self, query, root_value=root, field_resolver=self._field_resolver,
+        result = await graphql(self,
+                               query,
+                               root_value=root,
+                               field_resolver=self._field_resolver,
                                operation_name=operation,
-                               context_value=context, variable_values=variables, middleware=middleware)
+                               context_value=context,
+                               variable_values=variables,
+                               middleware=middleware,
+                               execution_context_class=TGQLExecutionContext)
         return result
