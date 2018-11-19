@@ -169,8 +169,43 @@ Run your query
     async def run():
         result = await schema.run(query)
 
+Client
+======
+
+TypeGQL supports DSL client for working with a GraphQL API
+
+.. code-block:: python
+
+    pip install typegql[client]
+
+For example:
+
+
+.. code-block:: python
+
+    from typegql.client import Client
+
+    async with Client(url) as client:
+        await client.introspection()
+        dsl = client.dsl
+        query = dsl.Query.books_connection.select(dsl.BooksConnection.total_count)
+        doc = dsl.query(query)
+
+        result = await client.execute(doc)
 
 Change Log
 ==========
+1.0.1 [2018-11-19]
+------------------
+- adds support for client DSL
 
-    - added `graphql-core-next <https://github.com/graphql-python/graphql-core-next>`_ as a baseline for all GraphQL operations
+Initial
+-------
+- added `graphql-core-next <https://github.com/graphql-python/graphql-core-next>`_ as a baseline for all GraphQL operations
+
+
+TODO
+====
+- testing
+- travis
+- more testing
