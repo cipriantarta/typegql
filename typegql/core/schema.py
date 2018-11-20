@@ -66,8 +66,6 @@ class Schema(GraphQLSchema):
                 method = getattr(_type, 'resolve', None)
                 if method:
                     return method(source, field_name, _type.__args__[0], info, **kwargs)
-            elif Graph.is_graph(_type):
-                return _type()
 
         value = (
             source.get(field_name)
