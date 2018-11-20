@@ -169,4 +169,11 @@ def get_arg_serializer(arg_type):
         return partial(serialize_enum, arg_type)
     if isinstance(arg_type, GraphQLInputObjectType):
         return partial(serialize_input_object, arg_type)
-    return lambda value: ast_from_value(str(value) if arg_type.serialize(value) is None else arg_type.serialize(value))
+    return partial(serialize_value, arg_type)
+
+
+def serialize_value(arg_type, value):
+    return ast_from_value(
+        str(value) if arg_type.serialize(value) is None else arg_type.serialize(value),
+        arg_type
+    )
