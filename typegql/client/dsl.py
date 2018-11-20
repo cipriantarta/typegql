@@ -54,8 +54,8 @@ class DSLField:
 
 
 class DSLType(object):
-    def __init__(self, type):
-        self.type = type
+    def __init__(self, _type):
+        self.type = _type
 
     def __getattr__(self, name):
         formatted_name, field_def = self.get_field(name)
@@ -145,13 +145,13 @@ def serialize_enum(arg_type, value):
 
 def serialize_input_object(arg_type, value):
     serializers = {k: get_arg_serializer(v) for k, v in arg_type.fields.items()}
-    result = ast_from_value(value)
-    for field in result.fields:
-        serialized = serializers[field.name.value](value[field.name.value])
-        if isinstance(field.value, ast.ListValueNode):
-            field.value = ast.ListValueNode(values=serialized)
+    result = ast_from_value(value, arg_type)
+    for f in result.fields:
+        serialized = serializers[f.name.value](value[f.name.value])
+        if isinstance(f.value, ast.ListValueNode):
+            f.value = ast.ListValueNode(values=serialized)
         else:
-            field.value = serialized
+            f.value = serialized
     return result
 
 
