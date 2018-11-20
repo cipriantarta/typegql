@@ -53,7 +53,7 @@ class Schema(GraphQLSchema):
         if self.camelcase:
             field_name = camel_to_snake(field_name)
 
-        if info.operation.operation == OperationType.MUTATION:
+        if info.operation.operation == OperationType.MUTATION and Graph.is_graph(source.__class__):
             try:
                 mutation = getattr(source, f'mutate_{field_name}')
                 return mutation(info, **kwargs)
