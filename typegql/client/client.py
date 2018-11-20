@@ -40,14 +40,17 @@ class Client:
         await self.session.close()
 
     async def introspection(self):
-        async with self.session.post(self.url, json={'query': get_introspection_query()}) as r:
-            body = await r.json()
-        schema = build_client_schema(body.get('data'))
+        result = await self.execute(get_introspection_query())
+        schema = build_client_schema(result.data)
         self.dsl = DSLSchema(schema)
         return schema
 
     @overload
     async def execute(self, document: DocumentNode, variable_values=None, timeout=None) -> ExecutionResult:
+        pass
+
+    @overload
+    async def execute(self, query: str, variable_values=None, timeout=None) -> ExecutionResult:
         pass
 
     async def execute(self, query: str, variable_values=None, timeout=None) -> ExecutionResult:

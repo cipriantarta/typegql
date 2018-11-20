@@ -3,7 +3,7 @@ import decimal
 from functools import partial
 
 from graphql import GraphQLField, print_ast, ast_from_value, GraphQLNonNull, GraphQLInputField, GraphQLList, \
-    GraphQLEnumType, GraphQLInputObjectType, OperationType
+    GraphQLEnumType, GraphQLInputObjectType, OperationType, GraphQLString
 from graphql.language import ast
 from graphql.pyutils import snake_to_camel
 
@@ -30,6 +30,10 @@ class DSLField:
     def args(self, **args):
         for name, value in args.items():
             arg = self.field.args.get(name)
+            if not arg:
+                name = snake_to_camel(name, upper=False)
+                arg = self.field.args.get(name)
+            assert arg, f'Invalid argument {name} for field {self.name}'
             arg_type_serializer = get_arg_serializer(arg.type)
             value = arg_type_serializer(value)
             self.ast_field.arguments.append(
@@ -43,6 +47,10 @@ class DSLField:
     @property
     def ast(self):
         return self.ast_field
+
+    @property
+    def name(self):
+        return self.ast.name.value
 
 
 class DSLType(object):
@@ -150,7 +158,7 @@ def serialize_input_object(arg_type, value):
 def get_arg_serializer(arg_type):
     if isinstance(arg_type, GraphQLNonNull):
         return get_arg_serializer(arg_type.of_type)
-    if isinstance(arg_type, str):
+    if arg_type == GraphQLString:
         return serialize_string
     if isinstance(arg_type, GraphQLInputField):
         return get_arg_serializer(arg_type.type)
