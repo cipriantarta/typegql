@@ -72,12 +72,8 @@ class Client:
                                      headers=self.headers,
                                      timeout=timeout or self.timeout,
                                      **body) as response:
-            assert response.status == 200, '{} {} - {}'.format(
-                response.status,
-                response.reason,
-                await response.text())
-            result = await response.json() if self.use_json else await response.text()
-            assert 'errors' in result or 'data' in result, 'Received non-compatible response "{}"'.format(result)
+            result = await response.json() if self.use_json else response.text()
+            assert 'errors' in result or 'data' in result, f'Received non-compatible response "{result}"'
 
             return ExecutionResult(
                 errors=result.get('errors'),

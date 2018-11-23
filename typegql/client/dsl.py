@@ -91,6 +91,9 @@ class DSLSchema(object):
             )]
         )
 
+    def mutation(self, *fields) -> ast.DocumentNode:
+        return self.query(*fields, operation=OperationType.MUTATION)
+
     def as_string(self, doc):
         return print_ast(doc)
 
