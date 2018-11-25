@@ -191,7 +191,7 @@ For example:
         query = dsl.Query.books_connection.select(dsl.BooksConnection.total_count)
         doc = dsl.query(query)
 
-        result = await client.execute(doc)
+        status, result = await client.execute(doc)
 
 Change Log
 ==========

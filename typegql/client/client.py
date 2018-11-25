@@ -1,4 +1,4 @@
-from typing import overload, Dict
+from typing import overload, Dict, Tuple
 
 import aiohttp
 from graphql import get_introspection_query, build_client_schema, DocumentNode, ExecutionResult
@@ -40,7 +40,8 @@ class Client:
         await self.session.close()
 
     async def introspection(self):
-        result = await self.execute(get_introspection_query())
+        status, result = await self.execute(get_introspection_query())
+        assert status == 200
         schema = build_client_schema(result.data)
         self.dsl = DSLSchema(schema)
         return schema
@@ -53,7 +54,7 @@ class Client:
     async def execute(self, query: str, variable_values=None, timeout=None) -> ExecutionResult:
         pass
 
-    async def execute(self, query: str, variable_values=None, timeout=None) -> ExecutionResult:
+    async def execute(self, query: str, variable_values=None, timeout=None) -> Tuple[int, ExecutionResult]:
         if isinstance(query, DocumentNode):
             query = self.dsl.as_string(query)
 
@@ -75,7 +76,7 @@ class Client:
             result = await response.json() if self.use_json else response.text()
             assert 'errors' in result or 'data' in result, f'Received non-compatible response "{result}"'
 
-            return ExecutionResult(
+            return response.status, ExecutionResult(
                 errors=result.get('errors'),
                 data=result.get('data')
             )
