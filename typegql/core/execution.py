@@ -1,5 +1,5 @@
 from inspect import isawaitable
-from typing import List, Any, Union
+from typing import List, Any, Union, Dict
 
 from graphql import ExecutionContext, GraphQLField, FieldNode, GraphQLFieldResolver, GraphQLResolveInfo, GraphQLError, \
     GraphQLSchema, is_introspection_type
@@ -23,13 +23,24 @@ class TGQLExecutionContext(ExecutionContext):
             camelcase = getattr(info.schema, 'camelcase', False)
             arguments = get_argument_values(field_def, field_nodes[0], self.variable_values)
             if camelcase and not is_introspection_type(info.parent_type):
-                keys = [k for k in arguments.keys()]
-                for key in keys:
-                    if key in info.parent_type.fields[info.field_name].args:
-                        arguments[camel_to_snake(key)] = arguments.pop(key)
+                self.convert_keys(arguments)
             result = resolve_fn(source, info, **arguments)
             if isawaitable(result):
                 return self.await_result(result)
             return result
         except GraphQLError as e:
             return e
+
+
+    def convert_keys(self, root: Dict) -> Dict:
+        for key, value in root.items():
+            if isinstance(value, dict):
+                self.convert_keys(value)
+
+            if isinstance(value, list):
+                for item in value:
+                    if isinstance(item, dict):
+                        self.convert_keys(item)
+
+            root[camel_to_snake(key)] = root.pop(key)
+
