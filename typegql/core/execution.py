@@ -23,13 +23,20 @@ class TGQLExecutionContext(ExecutionContext):
             camelcase = getattr(info.schema, 'camelcase', False)
             arguments = get_argument_values(field_def, field_nodes[0], self.variable_values)
             if camelcase and not is_introspection_type(info.parent_type):
-                keys = [k for k in arguments.keys()]
-                for key in keys:
-                    if key in info.parent_type.fields[info.field_name].args:
-                        arguments[camel_to_snake(key)] = arguments.pop(key)
+                self.to_snake(info, arguments)
             result = resolve_fn(source, info, **arguments)
             if isawaitable(result):
                 return self.await_result(result)
             return result
         except GraphQLError as e:
             return e
+
+    def to_snake(self, info, arguments):
+        if not isinstance(arguments, dict):
+            return
+        keys = [k for k in arguments.keys()]
+        for key in keys:
+            if isinstance(arguments[key], list):
+                for arg in arguments[key]:
+                    self.to_snake(info, arg)
+            arguments[camel_to_snake(key)] = arguments.pop(key)

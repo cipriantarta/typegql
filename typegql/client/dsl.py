@@ -9,10 +9,11 @@ from graphql.pyutils import snake_to_camel
 
 
 class DSLField:
-    def __init__(self, name, f):
+    def __init__(self, name, f, camelcase=True):
         self.field = f
         self.ast_field = ast.FieldNode(name=ast.NameNode(value=name), arguments=[])
         self.selection_set = None
+        self.camelcase = camelcase
 
     def select(self, *fields):
         if not self.ast_field.selection_set:
@@ -27,12 +28,11 @@ class DSLField:
         self.ast_field.alias = ast.NameNode(value=alias)
         return self
 
-    def args(self, **args):
-        for name, value in args.items():
+    def args(self, **kwargs):
+        if self.camelcase:
+            self.args_to_camelcase(kwargs)
+        for name, value in kwargs.items():
             arg = self.field.args.get(name)
-            if not arg:
-                name = snake_to_camel(name, upper=False)
-                arg = self.field.args.get(name)
             assert arg, f'Invalid argument {name} for field {self.name}'
             arg_type_serializer = get_arg_serializer(arg.type)
             value = arg_type_serializer(value)
@@ -44,6 +44,17 @@ class DSLField:
             )
         return self
 
+    def args_to_camelcase(self, arguments):
+        if not isinstance(arguments, dict):
+            return
+        keys = [k for k in arguments.keys()]
+        for key in keys:
+            if isinstance(arguments[key], list):
+                for arg in arguments[key]:
+                    self.args_to_camelcase(arg)
+            arguments[snake_to_camel(key, upper=False)] = arguments.pop(key)
+
+
     @property
     def ast(self):
         return self.ast_field
@@ -54,32 +65,30 @@ class DSLField:
 
 
 class DSLType(object):
-    def __init__(self, _type):
+    def __init__(self, _type, camelcase=True):
         self.type = _type
+        self.camelcase = camelcase
 
     def __getattr__(self, name):
         formatted_name, field_def = self.get_field(name)
-        return DSLField(formatted_name, field_def)
+        return DSLField(formatted_name, field_def, camelcase=self.camelcase)
 
     def get_field(self, name):
-        camel_cased_name = snake_to_camel(name, upper=False)
-
+        if self.camelcase:
+            name = snake_to_camel(name, upper=False)
         if name in self.type.fields:
             return name, self.type.fields[name]
-
-        if camel_cased_name in self.type.fields:
-            return camel_cased_name, self.type.fields[camel_cased_name]
-
         raise KeyError('Field {} doesnt exist in type {}.'.format(name, self.type.name))
 
 
 class DSLSchema(object):
-    def __init__(self, schema):
+    def __init__(self, schema, camelcase=True):
         self.schema = schema
+        self.camelcase = camelcase
 
     def __getattr__(self, name):
         type_def = self.schema.get_type(name)
-        return DSLType(type_def)
+        return DSLType(type_def, self.camelcase)
 
     def query(self, *fields, operation=OperationType.QUERY) -> ast.DocumentNode:
         return ast.DocumentNode(

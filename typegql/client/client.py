@@ -17,7 +17,7 @@ class Client:
 
         result = await client.execute(doc)
     """
-    def __init__(self, url: str, auth=None, headers: Dict = None, use_json=True, timeout=None):
+    def __init__(self, url: str, auth=None, headers: Dict = None, use_json=True, timeout=None, camelcase=True):
         self.url = url
         self.session: aiohttp.ClientSession = None
         self.dsl: DSLSchema = None
@@ -25,6 +25,7 @@ class Client:
         self.headers = headers
         self.use_json = use_json
         self.timeout = timeout
+        self.camelcase = camelcase
 
     async def init(self):
         self.session = self.session or aiohttp.ClientSession()
@@ -43,7 +44,7 @@ class Client:
         status, result = await self.execute(get_introspection_query())
         assert status == 200
         schema = build_client_schema(result.data)
-        self.dsl = DSLSchema(schema)
+        self.dsl = DSLSchema(schema, camelcase=self.camelcase)
         return schema
 
     @overload

@@ -40,7 +40,10 @@ class Graph:
     def get_fields(cls, graph: Type[Graph], is_mutation=False, camelcase=True):
         result = dict()
         meta = getattr(graph, 'Meta', None)
+        exclude = getattr(meta, 'graph_exclude', tuple())
         for name, _type in get_type_hints(graph).items():
+            if name in exclude:
+                continue
             info = getattr(meta, name, GraphInfo())
             assert isinstance(info, GraphInfo), f'{graph.__name__} info for `{name}` MUST be of type `GraphInfo`'
 

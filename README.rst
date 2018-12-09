@@ -172,7 +172,8 @@ Run your query
 Client
 ======
 
-TypeGQL supports DSL client for working with a GraphQL API
+TypeGQL supports DSL client for working with a GraphQL API.
+The client automatically converts snake to camelcase. set `camelcase=False` if this is not desired
 
 .. code-block:: python
 
@@ -185,7 +186,7 @@ For example:
 
     from typegql.client import Client
 
-    async with Client(url) as client:
+    async with Client(url, camelcase=True) as client:
         await client.introspection()
         dsl = client.dsl
         query = dsl.Query.books_connection.select(dsl.BooksConnection.total_count)
@@ -195,6 +196,11 @@ For example:
 
 Change Log
 ==========
+1.0.7 [2018-12-09]
+------------------
+- bug fixing
+- adds support for camelcase in Client
+
 1.0.1 [2018-11-19]
 ------------------
 - adds support for client DSL
@@ -209,3 +215,4 @@ TODO
 - testing
 - travis
 - more testing
+- please help with testing :|

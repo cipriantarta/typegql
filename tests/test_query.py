@@ -1,8 +1,8 @@
 async def test__books_connection__ok(schema):
     query = '''
     query BooksConnection {
-      books_connection {
-        total_count
+      booksConnection {
+        totalCount
         edges {
           node {
             id
@@ -15,9 +15,9 @@ async def test__books_connection__ok(schema):
     '''
     result = await schema.run(query)
     assert result.data
-    assert 'books_connection' in result.data
-    assert 'total_count' in result.data['books_connection']
-    assert 'edges' in result.data['books_connection']
-    edges = result.data['books_connection']['edges']
+    assert 'booksConnection' in result.data
+    assert 'totalCount' in result.data['booksConnection']
+    assert 'edges' in result.data['booksConnection']
+    edges = result.data['booksConnection']['edges']
     assert edges and len(edges) > 0
     assert result
