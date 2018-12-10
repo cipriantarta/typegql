@@ -137,6 +137,44 @@ Define your types
             return ['testing', 'purpose']
 
 
+Using Fields instead
+--------------------
+
+Instead of relying on Meta to define properties you can use the following fields:
+
+.. code-block:: python
+
+    Field, InputField, ConnectionField
+
+For example:
+
+.. code-block:: python
+
+    from typegql import Field, ConnectionField
+
+
+    class Query(Graph):
+        authors: Field[Author]
+        categories: Field[Category](description='what\'s this?', required=True)
+        books_connection: ConnectionField[Book](connection_class=CustomConnection)
+
+You can also pass arguments either in the Meta or as a Field argument
+
+.. code-block:: python
+
+    from typegql import Argument, ArgumentList, Field
+
+
+    class Query(Graph):
+        authors: Field[Author](arguments=[
+            Argument[ID](name='id', required=True, mutation=True)
+        ])
+        books: List[Book]
+
+        class Meta:
+            books = GraphInfo(mutation=False, arguments=[
+                ArgumentList[ID](name='authors')
+            ])
 
 Run your query
 --------------

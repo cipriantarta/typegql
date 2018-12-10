@@ -2,7 +2,8 @@ from typing import List, TypeVar, Generic
 
 from graphql import GraphQLResolveInfo
 
-from typegql import Graph, Connection, GraphInfo, GraphArgument, InputGraph, ID, Field, ArgumentList, ListField
+from typegql import Graph, Connection, GraphInfo, GraphArgument, InputGraph, ID, Field, ArgumentList, ListField, \
+    ConnectionField
 from examples.library.types import Author, Category
 from examples.library.types import Book
 from examples.library import db
@@ -25,6 +26,8 @@ class Query(Graph):
         description='Showcasing Field[Type]',
         arguments=[
             ArgumentList[ID](name='for_authors', required=True, description='Filter books by author `ID`')])
+
+    authors_connection: ConnectionField[Author](connection_class=CustomConnection)
 
     async def resolve_authors(self, selections):
         return [Author(**data) for data in db.get('authors')]
@@ -59,6 +62,22 @@ class Query(Graph):
         if last:
             data = data[-last:]
 
+        return {
+            'total_count': total,
+            'page_info': {
+                'has_next': False
+            },
+            'edges': [{
+                'node': node
+            } for node in data]}
+
+    async def resolve_authors_connection(self, info, first=None, last=None, **kwargs):
+        data = [Author(**author) for author in db.get('authors')]
+        total = len(data)
+        if first:
+            data = data[:first]
+        if last:
+            data = data[-last:]
         return {
             'total_count': total,
             'page_info': {

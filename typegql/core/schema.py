@@ -4,8 +4,10 @@ from typing import Type, Callable, Any
 from graphql import GraphQLSchema, GraphQLObjectType, graphql, OperationType, validate_schema
 from graphql.pyutils import camel_to_snake
 
-from typegql.core.execution import TGQLExecutionContext
-from typegql.core.graph import Graph
+from .builder import SchemaBuilder
+from .execution import TGQLExecutionContext
+from .graph import Graph
+from .utils import is_graph, is_connection
 
 logger = logging.getLogger(__name__)
 
@@ -18,10 +20,10 @@ class Schema(GraphQLSchema):
                  camelcase=True):
         super().__init__()
         self.camelcase = camelcase
-
+        builder = SchemaBuilder(self.camelcase)
         if query:
             self.query: Callable = query
-            query_fields = query.get_fields(query, camelcase=self.camelcase)
+            query_fields = builder.get_fields(query)
             query = GraphQLObjectType(
                 'Query',
                 fields=query_fields,
@@ -29,7 +31,7 @@ class Schema(GraphQLSchema):
 
         if mutation:
             self.mutation: Callable = mutation
-            mutation_fields = mutation.get_fields(mutation, camelcase=self.camelcase)
+            mutation_fields = builder.get_fields(mutation)
             mutation = GraphQLObjectType(
                 'Mutation',
                 fields=mutation_fields
@@ -37,7 +39,7 @@ class Schema(GraphQLSchema):
 
         if subscription:
             self.subscription: Callable = subscription
-            subscription_fields = subscription.get_fields(subscription, camelcase=self.camelcase)
+            subscription_fields = builder.get_fields(subscription)
             subscription = GraphQLObjectType(
                 'Subscription',
                 fields=subscription_fields
@@ -53,16 +55,16 @@ class Schema(GraphQLSchema):
         if self.camelcase:
             field_name = camel_to_snake(field_name)
 
-        if info.operation.operation == OperationType.MUTATION and Graph.is_graph(source.__class__):
+        if info.operation.operation == OperationType.MUTATION and is_graph(source.__class__):
             try:
                 mutation = getattr(source, f'mutate_{field_name}')
                 return mutation(info, **kwargs)
             except AttributeError:
                 return
 
-        if Graph.is_graph(source.__class__):
+        if is_graph(source.__class__):
             _type = source.__annotations__.get(field_name)
-            if Graph.is_connection(_type):
+            if is_connection(_type):
                 method = getattr(_type, 'resolve', None)
                 if method:
                     return method(source, field_name, _type.__args__[0], info, **kwargs)

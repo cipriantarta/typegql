@@ -8,6 +8,6 @@ from .arguments import GraphArgument
 class GraphInfo:
     name: str = dataclasses.field(default='')
     required: bool = dataclasses.field(default=False)
-    use_in_mutation: bool = dataclasses.field(default=True)
+    mutation: bool = dataclasses.field(default=True)
     description: str = dataclasses.field(default='')
     arguments: List[GraphArgument] = dataclasses.field(default_factory=list)

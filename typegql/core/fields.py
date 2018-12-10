@@ -1,9 +1,9 @@
 import functools
 from typing import List, Any, Type
 
-from .info import GraphInfo
 from .arguments import Argument
-
+from .connection import Connection
+from .info import GraphInfo
 
 _cleanups = []
 
@@ -19,6 +19,7 @@ def cache(func):
         except TypeError:
             pass  # All real errors (not unhashable args) are raised below.
         return func(*args, **kwds)
+
     return inner
 
 
@@ -53,7 +54,7 @@ class Field:
         if description:
             self._description = description
         self.required = kwargs.get('required', False)
-        self.arguments = kwargs.get('arguments')
+        self.arguments = kwargs.get('arguments', list())
         return self
 
     @property
@@ -71,7 +72,7 @@ class Field:
     @property
     def info(self) -> GraphInfo:
         return GraphInfo(name=self.name, description=self.description, required=self.required,
-                         arguments=self.arguments, use_in_mutation=self.mutation)
+                         arguments=self.arguments, mutation=self.mutation)
 
 
 class ListField(Field):
@@ -87,9 +88,8 @@ class InputField(Field):
         super().__init__(_type, name, description, required, arguments, mutation=True)
 
 
-# class ConnectionField(Field):
-#     def __init__(self, _type: Type[Any], connection_class=None, name: str = None, description: str = None, required: bool = False,
-#                  arguments: List[Argument] = None):
-#         connection_class = connection_class or Connection
-#         _type = List[_type]
-#         super().__init__(_type, name, description, required, arguments)
+class ConnectionField(Field):
+    def __call__(self, *args, **kwargs):
+        connection_class = kwargs.get('connection_class', Connection)
+        self._type = connection_class[self._type]
+        return super().__call__(*args, **kwargs)

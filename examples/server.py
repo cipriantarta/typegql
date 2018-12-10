@@ -22,8 +22,9 @@ async def default(request):
 @app.route('/graphql', methods=['POST'])
 async def default(request):
     query = request.args.get('query') if request.method.lower() == 'get' else request.json.get('query')
+    operation_name = request.json.get('operationName')
     try:
-        result = await schema.run(query)
+        result = await schema.run(query, operation=operation_name)
     except GraphQLError as e:
         logger.exception(e)
         return json({'data': str(e)})
@@ -35,4 +36,4 @@ async def default(request):
 
 
 if __name__ == '__main__':
-    app.run(host='localhost', port=3000, debug=True, auto_reload=True)
+    app.run(host='localhost', port=3000, debug=True, auto_reload=False)

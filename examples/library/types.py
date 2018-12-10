@@ -3,8 +3,8 @@ from decimal import Decimal
 from enum import Enum
 from typing import List
 
-from typegql import Field
-from typegql.core.graph import Graph, ID, GraphInfo
+from typegql import Field, ID, GraphInfo
+from typegql.core.graph import Graph
 from examples.library import db
 
 
@@ -27,7 +27,7 @@ class GeoLocation:
 class Author(Graph):
     """Person that is usually a writer"""
 
-    id: ID
+    id: Field[ID](required=True)
     name: str
     gender: Gender
     geo: GeoLocation
@@ -39,6 +39,8 @@ class Category(Graph):
 
 
 class Book(Graph):
+    """A book... for reading :|"""
+
     id: ID
     author_id: ID
     title: Field[str]
@@ -49,7 +51,7 @@ class Book(Graph):
 
     class Meta:
         description = 'Just a book'
-        id = GraphInfo(required=True, use_in_mutation=False, description='Book unique identifier')
+        id = GraphInfo(required=True, mutation=False, description='Book unique identifier')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
