@@ -2,7 +2,7 @@ from typing import List, TypeVar, Generic
 
 from graphql import GraphQLResolveInfo
 
-from typegql import Graph, Connection, GraphInfo, GraphArgument, InputGraph, ID
+from typegql import Graph, Connection, GraphInfo, GraphArgument, InputGraph, ID, Field, ArgumentList, ListField
 from examples.library.types import Author, Category
 from examples.library.types import Book
 from examples.library import db
@@ -19,15 +19,12 @@ class Query(Graph):
     authors: List[Author]
     categories: List[Category]
 
-    books_connection: CustomConnection[Book]
-
-    class Meta:
-        authors = GraphInfo(description='Collection of book authors')
-        books_connection = GraphInfo(description='GraphQL connection that returns a collection of `Book`s',
-                                     arguments=[
-                                         GraphArgument[List[ID]](name='for_authors',
-                                                                 description='Filter books by author `ID`')
-                                     ])
+    books_new_name: ListField[Book](name='books_new_name')
+    books_connection: Field[CustomConnection[Book]](
+        required=True,
+        description='Showcasing Field[Type]',
+        arguments=[
+            ArgumentList[ID](name='for_authors', required=True, description='Filter books by author `ID`')])
 
     async def resolve_authors(self, selections):
         return [Author(**data) for data in db.get('authors')]
@@ -39,6 +36,9 @@ class Query(Graph):
         else:
             result = [Book(**book) for book in db.get('books')]
         return result
+
+    async def resolve_books_new_name(self, info, author=None, **kwargs):
+        return await self.resolve_books(info, author, **kwargs)
 
     async def resolve_categories(self, selections):
         return [Category(**data) for data in db.get('categories')]

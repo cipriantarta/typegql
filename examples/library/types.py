@@ -3,6 +3,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import List
 
+from typegql import Field
 from typegql.core.graph import Graph, ID, GraphInfo
 from examples.library import db
 
@@ -24,6 +25,8 @@ class GeoLocation:
 
 
 class Author(Graph):
+    """Person that is usually a writer"""
+
     id: ID
     name: str
     gender: Gender
@@ -38,8 +41,8 @@ class Category(Graph):
 class Book(Graph):
     id: ID
     author_id: ID
-    title: str
-    author: Author
+    title: Field[str]
+    author: Field[Author](required=True, description='The author of this book')
     categories: List[Category]
     published: datetime
     tags: List[str]

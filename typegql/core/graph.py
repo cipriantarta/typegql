@@ -1,22 +1,15 @@
 from __future__ import annotations
 
-import dataclasses
 from enum import Enum
 from typing import get_type_hints, Type, List, Any, TypeVar, Generic
 
 import graphql
 from graphql.pyutils import snake_to_camel
 
+from .arguments import GraphArgument, GraphArgumentList
+from .fields import Field
 from .types import DateTime, ID, Dictionary
-
-
-@dataclasses.dataclass
-class GraphInfo:
-    name: str = dataclasses.field(default='')
-    required: bool = dataclasses.field(default=False)
-    use_in_mutation: bool = dataclasses.field(default=True)
-    description: str = dataclasses.field(default='')
-    arguments: List[GraphArgument] = dataclasses.field(default_factory=list)
+from .info import GraphInfo
 
 
 class Graph:
@@ -44,7 +37,11 @@ class Graph:
         for name, _type in get_type_hints(graph).items():
             if name in exclude:
                 continue
-            info = getattr(meta, name, GraphInfo())
+
+            if isinstance(_type, Field):
+                info = _type.info
+            else:
+                info = getattr(meta, name, GraphInfo())
             assert isinstance(info, GraphInfo), f'{graph.__name__} info for `{name}` MUST be of type `GraphInfo`'
 
             if is_mutation and not info.use_in_mutation:
@@ -77,6 +74,8 @@ class Graph:
     def map_type(cls, _type: Any, is_mutation=False):
         if isinstance(_type, graphql.GraphQLType):
             return _type
+        if isinstance(_type, Field):
+            _type = _type.type
         try:
             type_name = _type.__name__
         except AttributeError:
@@ -86,7 +85,7 @@ class Graph:
             type_name = _type.__origin__.__name__
 
         if Graph.is_connection(_type):
-            return Connection.get_fields(_type)
+            return _type.__origin__.get_fields(_type)
 
         if Graph.is_enum(_type):
             if type_name in cls._types:
@@ -140,9 +139,9 @@ class Graph:
             return cls._types[type_name]
         fields = cls.get_fields(_type, is_mutation=is_mutation)
         if not is_mutation:
-            graph_type = graphql.GraphQLObjectType(type_name, fields=fields)
+            graph_type = graphql.GraphQLObjectType(type_name, description=_type.__doc__, fields=fields)
         else:
-            graph_type = graphql.GraphQLInputObjectType(type_name, fields=fields)
+            graph_type = graphql.GraphQLInputObjectType(type_name, description=_type.__doc__, fields=fields)
         if isinstance(info, GraphInfo):
             if info.required:
                 graph_type = graphql.GraphQLNonNull(graph_type)
@@ -152,8 +151,11 @@ class Graph:
     @classmethod
     def arguments(cls, info: GraphInfo, camelcase=True):
         result: graphql.GraphQLArgumentMap = dict()
-        for arg in getattr(info, 'arguments', []):
-            if not isinstance(arg, GraphArgument):
+        arguments = getattr(info, 'arguments')
+        if not isinstance(arguments, (list, tuple)):
+            return
+        for arg in arguments:
+            if not isinstance(arg, (GraphArgument, GraphArgumentList)):
                 continue
 
             _type = cls.map_type(arg.type, is_mutation=arg.is_input)
@@ -283,18 +285,6 @@ class Connection(Graph, Generic[T]):
             fields=super().get_fields(_type),
             interfaces=(cls._types.get('Node'),)
         )
-
-
-@dataclasses.dataclass
-class GraphArgument(Generic[T]):
-    name: str
-    description: str = ''
-    required: bool = False
-    is_input: bool = False
-
-    @property
-    def type(self):
-        return self.__orig_class__.__args__[0]
 
 
 class InputGraph(Graph):
