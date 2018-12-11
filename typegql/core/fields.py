@@ -88,6 +88,18 @@ class InputField(Field):
         super().__init__(_type, name, description, required, arguments, mutation=True)
 
 
+class RequiredField(Field):
+    def __init__(self, _type: Type[Any], name: str = None, description: str = None, required: bool = True,
+                 arguments: List[Argument] = None):
+        super().__init__(_type, name, description, required, arguments)
+
+
+class ReadonlyField(Field):
+    def __init__(self, _type: Type[Any], name: str = None, description: str = None, required: bool = False,
+                 arguments: List[Argument] = None):
+        super().__init__(_type, name, description, required, arguments, mutation=False)
+
+
 class ConnectionField(Field):
     def __call__(self, *args, **kwargs):
         connection_class = kwargs.get('connection_class', Connection)
