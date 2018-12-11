@@ -110,7 +110,7 @@ class ReadonlyField(Field):
 
 class ConnectionField(Field):
     """Relay connection field"""
-    
+
     def __call__(self, *args, **kwargs):
         connection_class = kwargs.get('connection_class', Connection)
         self._type = connection_class[self._type]

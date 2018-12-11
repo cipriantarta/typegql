@@ -1,11 +1,12 @@
 import logging
-from typing import Type, Callable, Any
+from typing import Type, Callable, Any, Dict
 
-from graphql import GraphQLSchema, GraphQLObjectType, graphql, OperationType, validate_schema
+from graphql import GraphQLSchema, GraphQLObjectType, graphql, OperationType, validate_schema, GraphQLType
 from graphql.pyutils import camel_to_snake
 
 from .builder import SchemaBuilder
 from .execution import TGQLExecutionContext
+from .fields import Field
 from .graph import Graph
 from .utils import is_graph, is_connection
 
@@ -17,10 +18,11 @@ class Schema(GraphQLSchema):
                  query: Type[Graph] = None,
                  mutation: Type[Graph] = None,
                  subscription: Type[Graph] = None,
+                 types: Dict[str, GraphQLType] = None,
                  camelcase=True):
         super().__init__()
         self.camelcase = camelcase
-        builder = SchemaBuilder(self.camelcase)
+        builder = SchemaBuilder(self.camelcase, types=types)
         if query:
             self.query: Callable = query
             query_fields = builder.get_fields(query)
@@ -64,6 +66,9 @@ class Schema(GraphQLSchema):
 
         if is_graph(source.__class__):
             _type = source.__annotations__.get(field_name)
+            if isinstance(_type, Field):
+                _type = _type.type
+
             if is_connection(_type):
                 method = getattr(_type, 'resolve', None)
                 if method:

@@ -15,7 +15,7 @@ from .utils import is_enum, is_list, is_graph, is_connection
 class SchemaBuilder:
     def __init__(self, camelcase: bool, types: Dict = None):
         self.camelcase = camelcase
-        self.types = types or {
+        self.types = {
             'ID': graphql.GraphQLID,
             'bool': graphql.GraphQLBoolean,
             'int': graphql.GraphQLInt,
@@ -24,6 +24,8 @@ class SchemaBuilder:
             'datetime': DateTime(),
             'Dict': Dictionary()
         }
+        if isinstance(types, Dict):
+            self.types.update(types)
 
     def get_fields(self, graph: Type[Graph], is_mutation=False):
         result = dict()
