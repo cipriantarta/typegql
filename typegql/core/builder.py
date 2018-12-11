@@ -3,7 +3,7 @@ from typing import get_type_hints, Type, Any, Dict
 import graphql
 from graphql.pyutils import snake_to_camel
 
-from .arguments import Argument, ArgumentList
+from .arguments import GraphArgument, GraphArgumentList
 from .connection import Connection, Node, Edge, PageInfo, T
 from .fields import Field
 from .graph import Graph
@@ -119,7 +119,7 @@ class SchemaBuilder:
         if not isinstance(arguments, (list, tuple)):
             return
         for arg in arguments:
-            if not isinstance(arg, (Argument, ArgumentList)):
+            if not isinstance(arg, (GraphArgument, GraphArgumentList)):
                 continue
 
             _type = self.map_type(arg.type, is_mutation=arg.is_input)

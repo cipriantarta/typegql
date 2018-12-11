@@ -92,12 +92,20 @@ class InputField(Field):
         super().__init__(_type, name, description, required, arguments, mutation=True)
 
 
+class RequiredInputField(Field):
+    """GraphQL field which can also be used in mutations"""
+
+    def __init__(self, _type: Type[Any], name: str = None, description: str = None,
+                 arguments: List[Argument] = None):
+        super().__init__(_type, name, description, arguments=arguments, required=True, mutation=True)
+
+
 class RequiredField(Field):
     """GraphQL Non NULL field"""
 
-    def __init__(self, _type: Type[Any], name: str = None, description: str = None, required: bool = True,
+    def __init__(self, _type: Type[Any], name: str = None, description: str = None,
                  arguments: List[Argument] = None):
-        super().__init__(_type, name, description, required, arguments)
+        super().__init__(_type, name, description, required=True, arguments=arguments)
 
 
 class ReadonlyField(Field):
