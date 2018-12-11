@@ -76,6 +76,8 @@ class Field:
 
 
 class ListField(Field):
+    """GraphQL list field"""
+
     def __init__(self, _type: Type[Any], name: str = None, description: str = None, required: bool = False,
                  arguments: List[Argument] = None):
         _type = List[_type]
@@ -83,24 +85,32 @@ class ListField(Field):
 
 
 class InputField(Field):
+    """GraphQL field which can also be used in mutations"""
+
     def __init__(self, _type: Type[Any], name: str = None, description: str = None, required: bool = False,
                  arguments: List[Argument] = None):
         super().__init__(_type, name, description, required, arguments, mutation=True)
 
 
 class RequiredField(Field):
+    """GraphQL Non NULL field"""
+
     def __init__(self, _type: Type[Any], name: str = None, description: str = None, required: bool = True,
                  arguments: List[Argument] = None):
         super().__init__(_type, name, description, required, arguments)
 
 
 class ReadonlyField(Field):
+    """GraphQL Field that can't be used in mutations"""
+
     def __init__(self, _type: Type[Any], name: str = None, description: str = None, required: bool = False,
                  arguments: List[Argument] = None):
         super().__init__(_type, name, description, required, arguments, mutation=False)
 
 
 class ConnectionField(Field):
+    """Relay connection field"""
+    
     def __call__(self, *args, **kwargs):
         connection_class = kwargs.get('connection_class', Connection)
         self._type = connection_class[self._type]
