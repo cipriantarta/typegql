@@ -84,7 +84,7 @@ class Schema(GraphQLSchema):
         return value
 
     async def run(self, query: str, root: Graph = None, operation: str = None, context: Any = None, variables=None,
-                  middleware=None):
+                  middleware=None, execution_context_class=TGQLExecutionContext):
         if query.startswith('mutation') and not root:
             root = self.mutation()
         elif not root:
@@ -97,5 +97,5 @@ class Schema(GraphQLSchema):
                                context_value=context,
                                variable_values=variables,
                                middleware=middleware,
-                               execution_context_class=TGQLExecutionContext)
+                               execution_context_class=execution_context_class)
         return result
