@@ -1,26 +1,8 @@
-import functools
 from typing import List, Any, Type
 
 from .arguments import Argument
 from .connection import Connection
 from .info import GraphInfo
-
-_cleanups = []
-
-
-def cache(func):
-    cached = functools.lru_cache()(func)
-    _cleanups.append(cached.cache_clear)
-
-    @functools.wraps(func)
-    def inner(*args, **kwds):
-        try:
-            return cached(*args, **kwds)
-        except TypeError:
-            pass  # All real errors (not unhashable args) are raised below.
-        return func(*args, **kwds)
-
-    return inner
 
 
 class Field:
@@ -42,7 +24,6 @@ class Field:
         self.arguments = arguments
         self.mutation = mutation
 
-    @cache
     def __class_getitem__(cls, *args):
         assert len(args) == 1, 'Field container accepts a single argument'
         item = args[0]

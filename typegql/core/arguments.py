@@ -1,79 +1,86 @@
-import dataclasses
-from typing import Generic, TypeVar, List
+from typing import Generic, TypeVar, List, Type, Any
 
 T = TypeVar('T', bound='Graph')
 
 
-@dataclasses.dataclass
-class GraphArgument(Generic[T]):
-    name: str
-    description: str = ''
-    required: bool = False
-    is_input: bool = False
+class GraphArgument:
+    def __init__(self, _type: Type[Any], name: str, description: str = '',
+                 required: bool = False,
+                 is_input: bool = False):
+        self._type = _type
+        self.name = name
+        self.description = description
+        self.required = required
+        self.is_input = is_input
+
+    def __class_getitem__(cls, *args, **kwargs):
+        assert len(args) == 1, 'GraphArgument container accepts a single argument'
+        item = args[0]
+        return cls(item, name='')
+
+    def __call__(self, name: str, *args, **kwargs):
+        self.name = name
+        return self
 
     @property
     def type(self):
-        return self.__orig_class__.__args__[0]
+        return self._type
 
 
-@dataclasses.dataclass
-class GraphArgumentList(Generic[T]):
-    name: str
-    description: str = ''
-    required: bool = False
-    is_input: bool = False
-
+class GraphArgumentList(GraphArgument):
     @property
     def type(self):
-        return List[self.__orig_class__.__args__[0]]
+        return List[self._type]
 
 
-@dataclasses.dataclass
-class InputArgument(GraphArgument, Generic[T]):
-    name: str
-    description: str = ''
-    required: bool = False
-    is_input: bool = True
+class InputArgument(GraphArgument):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.is_input = True
 
 
-@dataclasses.dataclass
 class RequiredArgument(GraphArgument, Generic[T]):
-    name: str
-    description: str = ''
-    required: bool = True
-    is_input: bool = False
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.required = True
 
 
-@dataclasses.dataclass
 class ListRequiredArgument(GraphArgumentList, Generic[T]):
-    name: str
-    description: str = ''
-    required: bool = True
-    is_input: bool = False
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.required = True
+
+    @property
+    def type(self):
+        return List[self._type]
 
 
-@dataclasses.dataclass
 class RequiredInputArgument(GraphArgument, Generic[T]):
-    name: str
-    description: str = ''
-    required: bool = True
-    is_input: bool = True
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.required = True
+        self.is_input = True
 
 
-@dataclasses.dataclass
 class ListInputArgument(GraphArgumentList, Generic[T]):
-    name: str
-    description: str = ''
-    required: bool = False
-    is_input: bool = True
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.is_input = True
+
+    @property
+    def type(self):
+        return List[self._type]
 
 
-@dataclasses.dataclass
 class ListRequiredInputArgument(GraphArgumentList, Generic[T]):
-    name: str
-    description: str = ''
-    required: bool = True
-    is_input: bool = True
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.required = True
+        self.is_input = True
+
+    @property
+    def type(self):
+        return List[self._type]
 
 
 Argument = GraphArgument
