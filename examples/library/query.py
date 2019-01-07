@@ -2,7 +2,7 @@ from typing import List, TypeVar, Generic
 
 from graphql import GraphQLResolveInfo
 
-from typegql import Graph, Connection, GraphInfo, GraphArgument, InputGraph, ID, Field, ArgumentList, ListField, \
+from typegql import Graph, Connection, Argument, ID, Field, ArgumentList, \
     ConnectionField
 from examples.library.types import Author, Category
 from examples.library.types import Book
@@ -96,7 +96,7 @@ class Mutation(InputGraph):
                                  description='Create new `Book` objects and retrieve a list of ids for the '
                                              'created objects',
                                  arguments=[
-                                     GraphArgument[List[Book]]('data', is_input=True)
+                                     Argument[List[Book]]('data', is_input=True)
                                  ])
 
     async def mutate_create_books(self, info: GraphQLResolveInfo, data):

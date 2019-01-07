@@ -2,7 +2,7 @@ from inspect import isawaitable
 from typing import List, Any, Union
 
 from graphql import ExecutionContext, GraphQLField, FieldNode, GraphQLFieldResolver, GraphQLResolveInfo, GraphQLError, \
-    GraphQLSchema, is_introspection_type
+    is_introspection_type
 from graphql.execution.values import get_argument_values
 from graphql.pyutils import camel_to_snake
 
@@ -29,6 +29,8 @@ class TGQLExecutionContext(ExecutionContext):
                 return self.await_result(result)
             return result
         except GraphQLError as e:
+            return e
+        except Exception as e:
             return e
 
     def to_snake(self, info, arguments):

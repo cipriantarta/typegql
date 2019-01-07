@@ -3,7 +3,7 @@ from typing import Generic, TypeVar, List, Type, Any
 T = TypeVar('T', bound='Graph')
 
 
-class GraphArgument:
+class Argument:
     def __init__(self, _type: Type[Any], name: str, description: str = '',
                  required: bool = False,
                  is_input: bool = False):
@@ -27,42 +27,38 @@ class GraphArgument:
         return self._type
 
 
-class GraphArgumentList(GraphArgument):
+class RequiredArgument(Argument, Generic[T]):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.required = True
+
+
+class ArgumentList(Argument):
     @property
     def type(self):
         return List[self._type]
 
 
-class InputArgument(GraphArgument):
+class RequiredArgumentList(RequiredArgument):
+    @property
+    def type(self):
+        return List[self._type]
+
+
+class InputArgument(Argument):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.is_input = True
 
 
-class RequiredArgument(GraphArgument, Generic[T]):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.required = True
-
-
-class ListRequiredArgument(GraphArgumentList, Generic[T]):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.required = True
-
-    @property
-    def type(self):
-        return List[self._type]
-
-
-class RequiredInputArgument(GraphArgument, Generic[T]):
+class RequiredInputArgument(Argument, Generic[T]):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.required = True
         self.is_input = True
 
 
-class ListInputArgument(GraphArgumentList, Generic[T]):
+class ListInputArgument(ArgumentList, Generic[T]):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.is_input = True
@@ -72,7 +68,7 @@ class ListInputArgument(GraphArgumentList, Generic[T]):
         return List[self._type]
 
 
-class ListRequiredInputArgument(GraphArgumentList, Generic[T]):
+class RequiredListInputArgument(ArgumentList, Generic[T]):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.required = True
@@ -81,7 +77,3 @@ class ListRequiredInputArgument(GraphArgumentList, Generic[T]):
     @property
     def type(self):
         return List[self._type]
-
-
-Argument = GraphArgument
-ArgumentList = GraphArgumentList

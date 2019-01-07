@@ -3,7 +3,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import List
 
-from typegql import Field, ID, GraphInfo
+from typegql import Field, ID
 from typegql.core.graph import Graph
 from examples.library import db
 

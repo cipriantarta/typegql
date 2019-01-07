@@ -1,106 +1,42 @@
-from typing import List, Any, Type
+from typing import List, Callable, Any, Union
 
 from .arguments import Argument
-from .connection import Connection
-from .info import GraphInfo
+
+
+class _MissingType:
+    pass
+
+
+MISSING = _MissingType()
 
 
 class Field:
-    def __init__(self, _type: Type[Any], name: str = None, description: str = None, required: bool = False,
-                 arguments: List[Argument] = None, mutation: bool = True):
-        """
-        Wraps a field intro a GraphQLField
-        :param _type: original type
-        :param name: field name as it should show in introspection
-        :param description: field description as it should show in introspection
-        :param required: is it nullable?
-        :param arguments: GraphQL arguments for this field
-        :param mutation: Should it be available for GraphQL mutations?
-        """
-        self._type = _type
-        self._name = name
-        self._description = description
+    def __init__(self, *,
+                 name: str = '',
+                 description: str = '',
+                 required: bool = True,
+                 mutation: bool = True,
+                 arguments: List[Argument] = None,
+                 default: Union[Any, Callable] = MISSING):
+        self.name = name
+        self.description = description
         self.required = required
-        self.arguments = arguments
         self.mutation = mutation
+        self.arguments = arguments or list()
 
-    def __class_getitem__(cls, *args):
-        assert len(args) == 1, 'Field container accepts a single argument'
-        item = args[0]
-        return cls(item)
-
-    def __call__(self, *args, **kwargs):
-        self._name = kwargs.get('name')
-        description = kwargs.get('description')
-        if description:
-            self._description = description
-        self.required = kwargs.get('required', False)
-        self.arguments = kwargs.get('arguments', list())
-        return self
-
-    @property
-    def type(self):
-        return self._type
-
-    @property
-    def name(self) -> str:
-        return self._name
-
-    @property
-    def description(self) -> str:
-        return self._description
-
-    @property
-    def info(self) -> GraphInfo:
-        return GraphInfo(name=self.name, description=self.description, required=self.required,
-                         arguments=self.arguments, mutation=self.mutation)
+        assert isinstance(self.arguments, (tuple, list)), 'Arguments must be a list or tuple'
+        self.default = default
 
 
-class ListField(Field):
-    """GraphQL list field"""
+class OptionalField(Field):
+    """GraphQL field"""
 
-    def __init__(self, _type: Type[Any], name: str = None, description: str = None, required: bool = False,
-                 arguments: List[Argument] = None):
-        _type = List[_type]
-        super().__init__(_type, name, description, required, arguments)
-
-
-class InputField(Field):
-    """GraphQL field which can also be used in mutations"""
-
-    def __init__(self, _type: Type[Any], name: str = None, description: str = None, required: bool = False,
-                 arguments: List[Argument] = None):
-        super().__init__(_type, name, description, required, arguments, mutation=True)
-
-
-class RequiredInputField(Field):
-    """GraphQL field which can also be used in mutations"""
-
-    def __init__(self, _type: Type[Any], name: str = None, description: str = None,
-                 arguments: List[Argument] = None):
-        super().__init__(_type, name, description, arguments=arguments, required=True, mutation=True)
-
-
-class RequiredField(Field):
-    """GraphQL Non NULL field"""
-
-    def __init__(self, _type: Type[Any], name: str = None, description: str = None,
-                 arguments: List[Argument] = None):
-        super().__init__(_type, name, description, required=True, arguments=arguments)
+    def __init__(self, **kwargs):
+        super().__init__(required=False, **kwargs)
 
 
 class ReadonlyField(Field):
-    """GraphQL Field that can't be used in mutations"""
+    """GraphQL field that can't be used in mutations"""
 
-    def __init__(self, _type: Type[Any], name: str = None, description: str = None, required: bool = False,
-                 arguments: List[Argument] = None):
-        super().__init__(_type, name, description, required, arguments, mutation=False)
-
-
-class ConnectionField(Field):
-    """Relay connection field"""
-
-    def __call__(self, *args, **kwargs):
-        connection_class = kwargs.get('connection_class', Connection)
-        self._type = connection_class[self._type]
-        return super().__call__(*args, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(mutation=False, **kwargs)

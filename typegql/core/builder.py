@@ -3,11 +3,9 @@ from typing import get_type_hints, Type, Any, Dict
 import graphql
 from graphql.pyutils import snake_to_camel
 
-from .arguments import GraphArgument, GraphArgumentList
+from .arguments import Argument, ArgumentList
 from .connection import Connection, Node, Edge, PageInfo, T
 from .fields import Field
-from .graph import Graph
-from .info import GraphInfo
 from .types import DateTime, Dictionary
 from .utils import is_enum, is_list, is_graph, is_connection
 
@@ -27,42 +25,35 @@ class SchemaBuilder:
         if isinstance(types, Dict):
             self.types.update(types)
 
-    def get_fields(self, graph: Type[Graph], is_mutation=False):
+    def get_fields(self, graph: Type[Any], is_mutation=False):
         result = dict()
-        meta = getattr(graph, 'Meta', None)
-        exclude = getattr(meta, 'graph_exclude', tuple())
         for name, _type in get_type_hints(graph).items():
-            if name in exclude:
+            field = getattr(graph, name, None)
+
+            if not isinstance(field, Field):
                 continue
 
-            if isinstance(_type, Field):
-                info = _type.info
-                _type = _type.type
-            else:
-                info = getattr(meta, name, GraphInfo())
-            assert isinstance(info, GraphInfo), f'{graph.__name__} info for `{name}` MUST be of type `GraphInfo`'
-
-            if is_mutation and not info.mutation:
+            if is_mutation and not field.mutation:
                 continue
 
             graph_type = self.map_type(_type, is_mutation=is_mutation)
             if not graph_type:
                 continue
 
-            if info.required:
+            if field.required:
                 graph_type = graphql.GraphQLNonNull(graph_type)
             if is_connection(_type):
-                info.arguments.extend(_type.page_arguments())
+                field.arguments.extend(_type.page_arguments())
 
-            args = self.arguments(info, self.camelcase)
-            field_name = info.name or name
+            args = self.arguments(field, self.camelcase)
+            field_name = field.name or name
             if self.camelcase:
                 field_name = snake_to_camel(field_name, upper=False)
             if is_mutation:
-                result[field_name] = graph_type
+                result[field_name] = graphql.GraphQLInputField(graph_type, description=field.description)
             else:
                 result[field_name] = graphql.GraphQLField(graph_type,
-                                                          description=info.description,
+                                                          description=field.description,
                                                           args=args)
 
         return result
@@ -97,7 +88,7 @@ class SchemaBuilder:
 
         return self.types.get(type_name)
 
-    def build_object_type(self, type_name, _type, info: GraphInfo = None, is_mutation=False):
+    def build_object_type(self, type_name, _type, is_mutation=False):
         if is_mutation:
             type_name = f'{type_name}Mutation'
         if type_name in self.types:
@@ -107,19 +98,16 @@ class SchemaBuilder:
             graph_type = graphql.GraphQLObjectType(type_name, description=_type.__doc__, fields=fields)
         else:
             graph_type = graphql.GraphQLInputObjectType(type_name, description=_type.__doc__, fields=fields)
-        if isinstance(info, GraphInfo):
-            if info.required:
-                graph_type = graphql.GraphQLNonNull(graph_type)
         self.types[type_name] = graph_type
         return graph_type
 
-    def arguments(self, info: GraphInfo, camelcase=True):
+    def arguments(self, field: Field, camelcase=True):
         result: graphql.GraphQLArgumentMap = dict()
-        arguments = getattr(info, 'arguments')
+        arguments = field.arguments
         if not isinstance(arguments, (list, tuple)):
             return
         for arg in arguments:
-            if not isinstance(arg, (GraphArgument, GraphArgumentList)):
+            if not isinstance(arg, (Argument, ArgumentList)):
                 continue
 
             _type = self.map_type(arg.type, is_mutation=arg.is_input)
@@ -138,22 +126,24 @@ class SchemaBuilder:
         wrapped = graph.__args__[0]
 
         fields = {}
-        meta = getattr(graph, 'Meta', None)
         for name, _type in get_type_hints(connection_class).items():
-            info = getattr(meta, name, GraphInfo())
+            field = getattr(graph, name, None)
+            if not isinstance(field, Field):
+                continue
+
             if is_list(_type) and _type.__args__[0] is Edge[T]:
                 inner = _type.__args__[0]
                 graph_type = graphql.GraphQLList(self.get_edge_field(inner.__origin__, wrapped))
             else:
                 graph_type = self.map_type(_type)
-            if info.required:
+            if field.required:
                 graph_type = graphql.GraphQLNonNull(graph_type)
 
-            arguments = self.arguments(info, self.camelcase)
-            field_name = info.name or name
+            arguments = self.arguments(field, self.camelcase)
+            field_name = field.name or name
             if self.camelcase:
                 field_name = snake_to_camel(field_name, upper=False)
-            fields[field_name] = graphql.GraphQLField(graph_type, description=info.description, args=arguments)
+            fields[field_name] = graphql.GraphQLField(graph_type, description=field.description, args=arguments)
 
         type_name = f'{wrapped.__name__}Connection'
         if type_name in self.types:
@@ -166,16 +156,17 @@ class SchemaBuilder:
 
     def get_edge_field(self, edge_type, inner: Type[T], camelcase=True):
         fields = dict()
-        meta = getattr(edge_type, 'Meta', None)
         for name, _type in get_type_hints(edge_type).items():
-            info = getattr(meta, name, GraphInfo())
+            field = getattr(edge_type, name, None)
+            if not isinstance(field, Field):
+                continue
             if _type is Node[T]:
                 graph_type = self.get_node_fields(inner)
             else:
                 graph_type = self.map_type(_type)
-            if info.required:
+            if field.required:
                 graph_type = graphql.GraphQLNonNull(graph_type)
-            field_name = info.name or name
+            field_name = field.name or name
             if camelcase:
                 field_name = snake_to_camel(field_name, upper=False)
             fields[field_name] = graph_type

@@ -1,13 +1,12 @@
 import logging
-from typing import Type, Callable, Any, Dict
+from typing import Type, Any, Dict, Callable
 
-from graphql import GraphQLSchema, GraphQLObjectType, graphql, OperationType, validate_schema, GraphQLType
+from graphql import GraphQLSchema, GraphQLObjectType, graphql, OperationType, validate_schema, GraphQLType, \
+    GraphQLResolveInfo
 from graphql.pyutils import camel_to_snake
 
 from .builder import SchemaBuilder
 from .execution import TGQLExecutionContext
-from .fields import Field
-from .graph import Graph
 from .utils import is_graph, is_connection
 
 logger = logging.getLogger(__name__)
@@ -15,16 +14,16 @@ logger = logging.getLogger(__name__)
 
 class Schema(GraphQLSchema):
     def __init__(self,
-                 query: Type[Graph] = None,
-                 mutation: Type[Graph] = None,
-                 subscription: Type[Graph] = None,
+                 query: Type[Any] = None,
+                 mutation: Type[Any] = None,
+                 subscription: Type[Any] = None,
                  types: Dict[str, GraphQLType] = None,
                  camelcase=True):
         super().__init__()
         self.camelcase = camelcase
         builder = SchemaBuilder(self.camelcase, types=types)
         if query:
-            self.query: Callable = query
+            self.query: Type = query
             query_fields = builder.get_fields(query)
             query = GraphQLObjectType(
                 'Query',
@@ -32,7 +31,7 @@ class Schema(GraphQLSchema):
             )
 
         if mutation:
-            self.mutation: Callable = mutation
+            self.mutation: Type = mutation
             mutation_fields = builder.get_fields(mutation)
             mutation = GraphQLObjectType(
                 'Mutation',
@@ -40,7 +39,7 @@ class Schema(GraphQLSchema):
             )
 
         if subscription:
-            self.subscription: Callable = subscription
+            self.subscription: object = subscription
             subscription_fields = builder.get_fields(subscription)
             subscription = GraphQLObjectType(
                 'Subscription',
@@ -66,8 +65,6 @@ class Schema(GraphQLSchema):
 
         if is_graph(source.__class__):
             _type = source.__annotations__.get(field_name)
-            if isinstance(_type, Field):
-                _type = _type.type
 
             if is_connection(_type):
                 method = getattr(_type, 'resolve', None)
@@ -83,7 +80,10 @@ class Schema(GraphQLSchema):
             return value(info, **kwargs)
         return value
 
-    async def run(self, query: str, root: Graph = None, operation: str = None, context: Any = None, variables=None,
+    async def run(self, query: str,
+                  root: Any = None,
+                  resolver: Callable[[Any, GraphQLResolveInfo, Dict[str, Any]], Any] = None,
+                  operation: str = None, context: Any = None, variables=None,
                   middleware=None, execution_context_class=TGQLExecutionContext):
         if query.startswith('mutation') and not root:
             root = self.mutation()
@@ -92,7 +92,7 @@ class Schema(GraphQLSchema):
         result = await graphql(self,
                                query,
                                root_value=root,
-                               field_resolver=self._field_resolver,
+                               field_resolver=resolver or self._field_resolver,
                                operation_name=operation,
                                context_value=context,
                                variable_values=variables,

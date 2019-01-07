@@ -1,8 +1,8 @@
 from enum import Enum
 from typing import Any, List
 
-from .connection import Connection
 from .graph import Graph
+from .connection import Connection
 
 
 def is_list(_type: Any) -> bool:
