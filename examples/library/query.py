@@ -2,8 +2,7 @@ from typing import List, TypeVar, Generic
 
 from graphql import GraphQLResolveInfo
 
-from typegql import Graph, Connection, Argument, ID, Field, ArgumentList, \
-    ConnectionField
+from typegql import Graph, Connection, ID, Field, ArgumentList, RequiredListInputArgument
 from examples.library.types import Author, Category
 from examples.library.types import Book
 from examples.library import db
@@ -12,24 +11,23 @@ T = TypeVar('T', bound=Graph)
 
 
 class CustomConnection(Connection, Generic[T]):
-    total_count: int
+    total_count: int = Field()
 
 
 class Query(Graph):
-    books: List[Book]
-    authors: List[Author]
-    categories: List[Category]
+    books: List[Book] = Field()
+    authors: List[Author] = Field()
+    categories: List[Category] = Field()
 
-    books_new_name: ListField[Book](name='books_new_name')
-    books_connection: Field[CustomConnection[Book]](
-        required=True,
+    books_new_name: List[Book] = Field(name='books_alias')
+    books_connection: CustomConnection[Book] = Field(
         description='Showcasing Field[Type]',
         arguments=[
             ArgumentList[ID](name='for_authors', required=True, description='Filter books by author `ID`')])
 
-    authors_connection: ConnectionField[Author](connection_class=CustomConnection)
+    authors_connection: CustomConnection[Author] = Field()
 
-    async def resolve_authors(self, selections):
+    async def resolve_authors(self, info: GraphQLResolveInfo, **kwargs):
         return [Author(**data) for data in db.get('authors')]
 
     async def resolve_books(self, info: GraphQLResolveInfo, author=None, **kwargs):
@@ -40,7 +38,7 @@ class Query(Graph):
             result = [Book(**book) for book in db.get('books')]
         return result
 
-    async def resolve_books_new_name(self, info, author=None, **kwargs):
+    async def resolve_books_new_name(self, info: GraphQLResolveInfo, author=None, **kwargs):
         return await self.resolve_books(info, author, **kwargs)
 
     async def resolve_categories(self, selections):
@@ -88,16 +86,11 @@ class Query(Graph):
             } for node in data]}
 
 
-class Mutation(InputGraph):
-    create_books: List[ID]
-
-    class Meta:
-        create_books = GraphInfo(required=True,
-                                 description='Create new `Book` objects and retrieve a list of ids for the '
-                                             'created objects',
-                                 arguments=[
-                                     Argument[List[Book]]('data', is_input=True)
-                                 ])
+class Mutation(Graph):
+    create_books: List[ID] = Field(description='Create new `Book`s and return a list of ids for the created objects',
+                                   arguments=[
+                                       RequiredListInputArgument[List[Book]]('data')
+                                   ])
 
     async def mutate_create_books(self, info: GraphQLResolveInfo, data):
         return [1]

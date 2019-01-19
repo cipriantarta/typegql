@@ -140,6 +140,8 @@ def get_ast_value(value):
 
 
 def serialize_list(serializer, values):
+    if isinstance(values, str):
+        values = [values]
     assert isinstance(values, collections.Iterable), 'Expected iterable, received "{}"'.format(repr(values))
     result = list()
     for val in values:

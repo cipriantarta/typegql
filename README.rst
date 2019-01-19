@@ -39,11 +39,11 @@ Define your query
     from typegql.examples.library import db
 
     class Query(Graph):
-        books: List[Book]
-        authors: List[Author]
-        categories: List[Category]
+        books: List[Book] = Field()
+        authors: List[Author] = Field()
+        categories: List[Category] = Field()
 
-        books_connection: Connection[Book]
+        books_connection: Connection[Book] = Field(description='Relay connection')
 
         async def resolve_authors(self, info, **kwargs):
             return db.get('authors')
@@ -67,12 +67,14 @@ Define your types
 
 .. code-block:: python
 
+    from dataclasses import dataclass
     from datetime import datetime
     from decimal import Decimal
     from enum import Enum
     from typing import List
 
-    from typegql.core.graph import Graph, ID, GraphInfo
+    from typegql import Field, ID, OptionalField, ReadonlyField
+    from typegql.core.graph import Graph
     from examples.library import db
 
 
@@ -81,42 +83,44 @@ Define your types
         FEMALE = 'female'
 
 
-    class GeoLocation:
-        latitude: Decimal
-        longitude: Decimal
+    class GeoLocation(Graph):
+    latitude: Decimal = Field()
+    longitude: Decimal = Field()
 
-        def __init__(self, latitude, longitude):
-            self.latitude = latitude
-            self.longitude = longitude
+    def __init__(self, latitude, longitude):
+        self.latitude = latitude
+        self.longitude = longitude
 
 
+    @dataclass
     class Author(Graph):
-        id: ID
-        name: str
-        gender: Gender
-        geo: GeoLocation
+        """Person that is usually a writer"""
+
+        id: ID = ReadonlyField()
+        name: str = Field()
+        gender: Gender = OptionalField()
+        geo: GeoLocation = OptionalField()
 
 
+    @dataclass
     class Category(Graph):
-        id: ID
-        name: str
+        id: ID = ReadonlyField()
+        name: str = Field()
 
 
+    @dataclass
     class Book(Graph):
-        id: ID
-        author_id: ID
-        title: str
-        author: Author
-        categories: List[Category]
-        published: datetime
-        tags: List[str]
+        """A book... for reading :|"""
 
-        class Meta:
-            description = 'Just a book'
-            id = GraphInfo(required=True, description='Book unique identifier')
+        id: ID = ReadonlyField()
+        author_id: ID = Field()
+        title: str = OptionalField()
+        author: Author = ReadonlyField(description='The author of this book')
+        categories: List[Category] = OptionalField()
+        published: datetime = OptionalField()
+        tags: List[str] = OptionalField()
 
-        def __init__(self, **kwargs):
-            super().__init__(**kwargs)
+        def __post_init__(self):
             self.published = datetime.strptime(self.published, '%Y-%m-%d %H:%M:%S')
 
         async def resolve_author(self, info):
@@ -140,41 +144,23 @@ Define your types
 Using Fields instead
 --------------------
 
-Instead of relying on Meta to define properties you can use the following fields:
+You can use the following fields to define your GraphQL schema:
 
 .. code-block:: python
 
-    Field, InputField, ConnectionField
+    Field, InputField, RequiredField, OptionalField
 
 For example:
 
 .. code-block:: python
 
-    from typegql import Field, ConnectionField
+    from typegql import Field, Connection, OptionalField
 
 
     class Query(Graph):
-        authors: Field[Author]
-        categories: Field[Category](description='what\'s this?', required=True)
-        books_connection: ConnectionField[Book](connection_class=CustomConnection)
-
-You can also pass arguments either in the Meta or as a Field argument
-
-.. code-block:: python
-
-    from typegql import Argument, ArgumentList, Field
-
-
-    class Query(Graph):
-        authors: Field[Author](arguments=[
-            Argument[ID](name='id', required=True, mutation=True)
-        ])
-        books: List[Book]
-
-        class Meta:
-            books = GraphInfo(mutation=False, arguments=[
-                ArgumentList[ID](name='authors')
-            ])
+        authors: Author = Field()
+        categories: Category = Field(description="what's this?")
+        books_connection: Connection[Book] = OptionalField()
 
 Run your query
 --------------
@@ -234,6 +220,13 @@ For example:
 
 Change Log
 ==========
+
+2.0.1 [2019-01-19]
+------------------
+- all properties that don't have a `Field` instance assigned to them will be ignored by the `Schema`
+- updates docs & example to reflect 2.0 changes
+- fixed a bug when using a `List` argument in mutations
+
 1.0.7 [2018-12-09]
 ------------------
 - bug fixing

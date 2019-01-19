@@ -11,7 +11,7 @@ from examples.library.template import TEMPLATE
 
 logger = logging.getLogger('sanic.error')
 app = Sanic()
-schema = Schema(Query, Mutation)
+schema = Schema(query=Query, mutation=Mutation)
 
 
 @app.route('', methods=['GET'])

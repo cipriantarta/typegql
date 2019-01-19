@@ -20,7 +20,8 @@ class SchemaBuilder:
             'float': graphql.GraphQLFloat,
             'str': graphql.GraphQLString,
             'datetime': DateTime(),
-            'Dict': Dictionary()
+            'Dict': Dictionary(),
+            'Decimal': graphql.GraphQLFloat
         }
         if isinstance(types, Dict):
             self.types.update(types)
