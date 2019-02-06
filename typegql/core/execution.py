@@ -41,4 +41,6 @@ class TGQLExecutionContext(ExecutionContext):
             if isinstance(arguments[key], list):
                 for arg in arguments[key]:
                     self.to_snake(info, arg)
+            elif isinstance(arguments[key], dict):
+                self.to_snake(info, arguments[key])
             arguments[camel_to_snake(key)] = arguments.pop(key)
