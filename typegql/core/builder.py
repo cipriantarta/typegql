@@ -4,7 +4,7 @@ import graphql
 from graphql.pyutils import snake_to_camel
 
 from .arguments import Argument, ArgumentList
-from .connection import Connection, Node, Edge, PageInfo, T
+from .connection import IConnection, INode, IEdge, IPageInfo, T
 from .fields import Field
 from .types import DateTime, Dictionary
 from .utils import is_enum, is_list, is_graph, is_connection
@@ -59,7 +59,7 @@ class SchemaBuilder:
 
         return result
 
-    def map_type(self, _type: Any, is_mutation=False):
+    def map_type(self, _type: Any, is_mutation=False, interfaces=None):
         if isinstance(_type, graphql.GraphQLType):
             return _type
         try:
@@ -85,20 +85,25 @@ class SchemaBuilder:
             return graphql.GraphQLList(inner)
 
         if is_graph(_type):
-            return self.build_object_type(type_name, _type, is_mutation=is_mutation)
+            return self.build_object_type(type_name, _type, is_mutation=is_mutation, interfaces=interfaces)
 
         return self.types.get(type_name)
 
-    def build_object_type(self, type_name, _type, is_mutation=False):
+    def build_object_type(self, type_name, _type, is_mutation=False, interfaces=None):
         if is_mutation:
             type_name = f'{type_name}Mutation'
         if type_name in self.types:
             return self.types[type_name]
         fields = self.get_fields(_type, is_mutation=is_mutation)
         if not is_mutation:
-            graph_type = graphql.GraphQLObjectType(type_name, description=_type.__doc__, fields=fields)
+            graph_type = graphql.GraphQLObjectType(type_name,
+                                                   description=_type.__doc__,
+                                                   fields=fields,
+                                                   interfaces=interfaces)
         else:
-            graph_type = graphql.GraphQLInputObjectType(type_name, description=_type.__doc__, fields=fields)
+            graph_type = graphql.GraphQLInputObjectType(type_name,
+                                                        description=_type.__doc__,
+                                                        fields=fields)
         self.types[type_name] = graph_type
         return graph_type
 
@@ -118,7 +123,7 @@ class SchemaBuilder:
             result[arg_name] = graphql.GraphQLArgument(_type, description=arg.description)
         return result
 
-    def get_connection_fields(self, graph: Type[Connection]):
+    def get_connection_fields(self, graph: Type[IConnection]):
         if not is_connection(graph):
             return self.get_fields(graph)
 
@@ -132,11 +137,14 @@ class SchemaBuilder:
             if not isinstance(field, Field):
                 continue
 
-            if is_list(_type) and _type.__args__[0] is Edge[T]:
+            if is_list(_type) and _type.__args__[0] is IEdge[T]:
                 inner = _type.__args__[0]
                 graph_type = graphql.GraphQLList(self.get_edge_field(inner.__origin__, wrapped))
             else:
-                graph_type = self.map_type(_type)
+                interfaces = []
+                if issubclass(_type, IPageInfo):
+                    interfaces = [self.types.get('IPageInfo')]
+                graph_type = self.map_type(_type, interfaces=interfaces)
             if field.required:
                 graph_type = graphql.GraphQLNonNull(graph_type)
 
@@ -151,7 +159,7 @@ class SchemaBuilder:
             return self.types.get(type_name)
         result = graphql.GraphQLObjectType(type_name,
                                            fields=fields,
-                                           interfaces=(self.types.get('Connection'),))
+                                           interfaces=(self.types.get('IConnection'),))
         self.types[type_name] = result
         return result
 
@@ -161,7 +169,7 @@ class SchemaBuilder:
             field = getattr(edge_type, name, None)
             if not isinstance(field, Field):
                 continue
-            if _type is Node[T]:
+            if _type is INode[T]:
                 graph_type = self.get_node_fields(inner)
             else:
                 graph_type = self.map_type(_type)
@@ -178,7 +186,7 @@ class SchemaBuilder:
         result = graphql.GraphQLNonNull(graphql.GraphQLObjectType(
             f'{inner.__name__}Edge',
             fields=fields,
-            interfaces=(self.types.get('Edge'),)
+            interfaces=(self.types.get('IEdge'),)
         ))
         self.types[type_name] = result
         return result
@@ -191,17 +199,17 @@ class SchemaBuilder:
             type_name,
             description=_type.__doc__,
             fields=self.get_fields(_type),
-            interfaces=(self.types.get('Node'),)
+            interfaces=(self.types.get('INode'),)
         )
         self.types[type_name] = result
         return result
 
     def build_connection_interface(self):
-        if 'Node' not in self.types:
-            self.types['Node'] = graphql.GraphQLInterfaceType('Node', self.get_fields(Node))
-        if 'Edge' not in self.types:
-            self.types['Edge'] = graphql.GraphQLInterfaceType('Edge', self.get_fields(Edge))
-        if 'PageInfo' not in self.types:
-            self.types['PageInfo'] = graphql.GraphQLObjectType('PageInfo', self.get_fields(PageInfo))
-        if 'Connection' not in self.types:
-            self.types['Connection'] = graphql.GraphQLInterfaceType('Connection', self.get_fields(Connection))
+        if 'INode' not in self.types:
+            self.types['INode'] = graphql.GraphQLInterfaceType('INode', self.get_fields(INode))
+        if 'IEdge' not in self.types:
+            self.types['IEdge'] = graphql.GraphQLInterfaceType('IEdge', self.get_fields(IEdge))
+        if 'IPageInfo' not in self.types:
+            self.types['IPageInfo'] = graphql.GraphQLInterfaceType('IPageInfo', self.get_fields(IPageInfo))
+        if 'IConnection' not in self.types:
+            self.types['IConnection'] = graphql.GraphQLInterfaceType('IConnection', self.get_fields(IConnection))

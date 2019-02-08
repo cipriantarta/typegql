@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Any, List
 
 from .graph import Graph
-from .connection import Connection
+from .connection import IConnection
 
 
 def is_list(_type: Any) -> bool:
@@ -28,6 +28,6 @@ def is_graph(_type: Any) -> bool:
 
 def is_connection(_type: Any) -> bool:
     try:
-        return _type.__origin__ is Connection or issubclass(_type.__origin__, Connection)
+        return _type.__origin__ is IConnection or issubclass(_type.__origin__, IConnection)
     except (TypeError, AttributeError):
         return False

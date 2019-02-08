@@ -220,6 +220,11 @@ For example:
 
 Change Log
 ==========
+2.0.3 [2019-02-08]
+------------------
+- changes `Connection`, `Edge`, `Node` and `PageInfo` to interfaces `IConnection`, `IEdge`, etc.
+- implements default `Connection` and `PageInfo` objects
+- removes `has_next`, `has_previous` from `PageInfo`
 
 2.0.1 [2019-01-19]
 ------------------

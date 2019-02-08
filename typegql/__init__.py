@@ -2,7 +2,7 @@ from .core.arguments import (Argument, ArgumentList, Argument, ArgumentList, Inp
                              ListInputArgument, RequiredInputArgument, RequiredListInputArgument, RequiredArgument,
                              RequiredArgumentList
                              )
-from .core.connection import Connection
+from .core.connection import IConnection, IPageInfo, IEdge, INode, Connection, PageInfo
 from .core.fields import Field, OptionalField, ReadonlyField
 from .core.graph import Graph
 from .core.schema import Schema
@@ -12,7 +12,7 @@ __all__ = (
     'Graph',
     'Argument', 'ArgumentList', 'InputArgument', 'ListInputArgument',
     'RequiredInputArgument', 'RequiredListInputArgument', 'RequiredArgument', 'RequiredArgumentList',
-    'Connection',
+    'IConnection', 'IPageInfo', 'IEdge', 'INode', 'Connection', 'PageInfo',
     'Field', 'OptionalField', 'ReadonlyField',
     'Schema', 'ID', 'DateTime'
 )
