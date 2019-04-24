@@ -3,7 +3,7 @@ from typing import List, TypeVar, Generic
 from graphql import GraphQLResolveInfo
 
 from typegql import Graph, Connection, ID, Field, ArgumentList, RequiredListInputArgument
-from examples.library.types import Author, Category
+from examples.library.types import Author, Category, Gender
 from examples.library.types import Book
 from examples.library import db
 
@@ -71,6 +71,10 @@ class Query(Graph):
 
     async def resolve_authors_connection(self, info, first=None, last=None, **kwargs):
         data = [Author(**author) for author in db.get('authors')]
+        for a in data:
+            if a.gender:
+                a.gender = Gender(a.gender)  # Send gender as Enum not as string
+
         total = len(data)
         if first:
             data = data[:first]
