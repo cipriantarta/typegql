@@ -220,7 +220,12 @@ For example:
 
 Change Log
 ==========
+2.0.5 [2019-04-24]
+------------------
+- fixed a bug when sending `introspection schema`
+
 2.0.4 [2019-04-24]
+------------------
 - updates assert for introspection add message with status and result
 - adds support for enum objects in `resolve_field_velue_or_error`
 
