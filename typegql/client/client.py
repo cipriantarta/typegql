@@ -42,7 +42,7 @@ class Client:
 
     async def introspection(self):
         status, result = await self.execute(get_introspection_query())
-        assert status == 200
+        assert status == 200, f'{status} - {result}'
         schema = build_client_schema(result.data)
         self.dsl = DSLSchema(schema, camelcase=self.camelcase)
         return schema

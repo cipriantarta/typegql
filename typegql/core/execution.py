@@ -1,3 +1,4 @@
+from enum import Enum
 from inspect import isawaitable
 from typing import List, Any, Union
 
@@ -27,6 +28,8 @@ class TGQLExecutionContext(ExecutionContext):
             result = resolve_fn(source, info, **arguments)
             if isawaitable(result):
                 return self.await_result(result)
+            if isinstance(result, Enum):
+                result = result.value
             return result
         except GraphQLError as e:
             return e

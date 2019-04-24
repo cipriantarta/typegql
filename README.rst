@@ -220,6 +220,10 @@ For example:
 
 Change Log
 ==========
+2.0.4 [2019-04-24]
+- updates assert for introspection add message with status and result
+- adds support for enum objects in `resolve_field_velue_or_error`
+
 2.0.3 [2019-02-08]
 ------------------
 - changes `Connection`, `Edge`, `Node` and `PageInfo` to interfaces `IConnection`, `IEdge`, etc.

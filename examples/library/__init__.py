@@ -4,7 +4,7 @@ db = json.loads('''
 {
   "authors": [
     {"id": 1, "name": "J.R.R. Tolkien", "gender": "male", "geo": {"latitude": 40.697403, "longitude": -74.120107}},
-    {"id": 2, "name": "Christopher Hitchens", "gender": "Male"}
+    {"id": 2, "name": "Christopher Hitchens", "gender": "male"}
   ],
   "books": [
     {"id": 1, "author_id": 1, "title": "Lord of the Rings", "categories": [1, 3], "published": "2017-03-10 13:30:00"},
