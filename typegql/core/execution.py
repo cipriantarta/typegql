@@ -21,14 +21,15 @@ class TGQLExecutionContext(ExecutionContext):
         info: GraphQLResolveInfo
     ) -> Union[Exception, Any]:
         try:
+            is_introspection = is_introspection_type(info.parent_type)
             camelcase = getattr(info.schema, 'camelcase', False)
             arguments = get_argument_values(field_def, field_nodes[0], self.variable_values)
-            if camelcase and not is_introspection_type(info.parent_type):
+            if camelcase and not is_introspection:
                 self.to_snake(info, arguments)
             result = resolve_fn(source, info, **arguments)
             if isawaitable(result):
                 return self.await_result(result)
-            if isinstance(result, Enum):
+            if not is_introspection and isinstance(result, Enum):
                 result = result.value
             return result
         except GraphQLError as e:

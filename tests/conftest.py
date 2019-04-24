@@ -1,4 +1,5 @@
 import pytest
+from graphql import get_introspection_query
 
 from typegql.core.schema import Schema
 from examples.library.query import Query
@@ -15,3 +16,8 @@ def pytest_collection_modifyitems(items):
 def schema():
     schema = Schema(Query)
     return schema
+
+
+@pytest.fixture
+def introspection_query():
+    return get_introspection_query()
