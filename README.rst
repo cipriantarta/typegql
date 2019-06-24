@@ -220,6 +220,10 @@ For example:
 
 Change Log
 ==========
+2.0.6 [2019-06-24]
+------------------
+- updates uvloop dependency
+
 2.0.5 [2019-04-24]
 ------------------
 - fixed a bug when sending `introspection schema`
