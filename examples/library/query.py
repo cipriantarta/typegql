@@ -28,7 +28,12 @@ class Query(Graph):
     authors_connection: CustomConnection[Author] = Field()
 
     async def resolve_authors(self, info: GraphQLResolveInfo, **kwargs):
-        return [Author(**data) for data in db.get('authors')]
+        authors = [Author(**data) for data in db.get('authors')]
+
+        for author in authors:
+            author.books = [Book(**book) for book in db.get('books') if book['author_id'] == author.id]
+
+        return authors
 
     async def resolve_books(self, info: GraphQLResolveInfo, author=None, **kwargs):
         if author:

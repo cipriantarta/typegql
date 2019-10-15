@@ -3,6 +3,8 @@ from typing import get_type_hints, Type, Any, Dict
 import graphql
 from graphql.pyutils import snake_to_camel
 
+from typegql import Graph
+from typegql.core.graph import GraphHelper
 from .arguments import Argument, ArgumentList
 from .connection import IConnection, INode, IEdge, IPageInfo, T
 from .fields import Field
@@ -89,12 +91,17 @@ class SchemaBuilder:
 
         return self.types.get(type_name)
 
+    def get_fields_lazy(self):
+        return dict()
+
     def build_object_type(self, type_name, _type, is_mutation=False, interfaces=None):
         if is_mutation:
             type_name = f'{type_name}Mutation'
         if type_name in self.types:
             return self.types[type_name]
-        fields = self.get_fields(_type, is_mutation=is_mutation)
+
+        graph_helper = GraphHelper(_type, self, is_mutation)
+        fields = graph_helper.get_fields
         if not is_mutation:
             graph_type = graphql.GraphQLObjectType(type_name,
                                                    description=_type.__doc__,

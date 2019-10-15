@@ -1,5 +1,5 @@
 import logging
-from typing import Type, Any, Dict, Callable
+from typing import Type, Any, Dict, Callable, Optional
 
 from graphql import GraphQLSchema, GraphQLObjectType, graphql, OperationType, validate_schema, GraphQLType, \
     GraphQLResolveInfo
@@ -10,20 +10,21 @@ from .execution import TGQLExecutionContext
 from .utils import is_graph, is_connection
 
 logger = logging.getLogger(__name__)
+AnyType = Optional[Type[Any]]
 
 
 class Schema(GraphQLSchema):
     def __init__(self,
-                 query: Type[Any] = None,
-                 mutation: Type[Any] = None,
-                 subscription: Type[Any] = None,
+                 query: AnyType = None,
+                 mutation: AnyType = None,
+                 subscription: AnyType = None,
                  types: Dict[str, GraphQLType] = None,
                  camelcase=True):
         super().__init__()
         self.camelcase = camelcase
         builder = SchemaBuilder(self.camelcase, types=types)
         if query:
-            self.query: Type = query
+            self.query = query
             query_fields = builder.get_fields(query)
             query = GraphQLObjectType(
                 'Query',

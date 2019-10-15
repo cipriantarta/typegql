@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
@@ -33,6 +35,7 @@ class Author(Graph):
     name: str = Field()
     gender: Gender = OptionalField()
     geo: GeoLocation = OptionalField()
+    books: List[Book] = OptionalField()
 
 
 @dataclass
