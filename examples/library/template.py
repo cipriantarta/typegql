@@ -1,3 +1,4 @@
+# flake8: noqa
 TEMPLATE = '''
 <!DOCTYPE html>
 <html>

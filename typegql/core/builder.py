@@ -3,7 +3,6 @@ from typing import get_type_hints, Type, Any, Dict
 import graphql
 from graphql.pyutils import snake_to_camel
 
-from typegql import Graph
 from typegql.core.graph import GraphHelper
 from .arguments import Argument, ArgumentList
 from .connection import IConnection, INode, IEdge, IPageInfo, T
@@ -96,7 +95,7 @@ class SchemaBuilder:
 
     def build_object_type(self, type_name, _type, is_mutation=False, interfaces=None):
         if is_mutation:
-            type_name = f'{type_name}Mutation'
+            type_name = f'{type_name}Input'
         if type_name in self.types:
             return self.types[type_name]
 

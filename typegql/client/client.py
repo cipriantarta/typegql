@@ -1,4 +1,4 @@
-from typing import overload, Dict, Tuple
+from typing import Dict, Tuple
 
 import aiohttp
 from graphql import get_introspection_query, build_client_schema, DocumentNode, ExecutionResult
@@ -46,14 +46,6 @@ class Client:
         schema = build_client_schema(result.data)
         self.dsl = DSLSchema(schema, camelcase=self.camelcase)
         return schema
-
-    @overload
-    async def execute(self, document: DocumentNode, variable_values=None, timeout=None) -> ExecutionResult:
-        pass
-
-    @overload
-    async def execute(self, query: str, variable_values=None, timeout=None) -> ExecutionResult:
-        pass
 
     async def execute(self, query: str, variable_values=None, timeout=None) -> Tuple[int, ExecutionResult]:
         if isinstance(query, DocumentNode):

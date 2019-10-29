@@ -1,4 +1,4 @@
-from .core.arguments import (Argument, ArgumentList, Argument, ArgumentList, InputArgument,
+from .core.arguments import (Argument, ArgumentList, InputArgument,
                              ListInputArgument, RequiredInputArgument, RequiredListInputArgument, RequiredArgument,
                              RequiredArgumentList
                              )

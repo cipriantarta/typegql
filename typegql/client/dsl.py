@@ -54,7 +54,6 @@ class DSLField:
                     self.args_to_camelcase(arg)
             arguments[snake_to_camel(key, upper=False)] = arguments.pop(key)
 
-
     @property
     def ast(self):
         return self.ast_field

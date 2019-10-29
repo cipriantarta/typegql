@@ -2,7 +2,7 @@ from typing import List, TypeVar, Generic
 
 from graphql import GraphQLResolveInfo
 
-from typegql import Graph, Connection, ID, Field, ArgumentList, RequiredListInputArgument
+from typegql import Graph, Connection, ID, Field, ArgumentList, RequiredListInputArgument, ListInputArgument
 from examples.library.types import Author, Category, Gender
 from examples.library.types import Book
 from examples.library import db
@@ -15,7 +15,9 @@ class CustomConnection(Connection, Generic[T]):
 
 
 class Query(Graph):
-    books: List[Book] = Field()
+    books: List[Book] = Field(arguments=[
+        ListInputArgument[Author](name='for_authors')
+    ])
     authors: List[Author] = Field()
     categories: List[Category] = Field()
 
@@ -98,7 +100,7 @@ class Query(Graph):
 class Mutation(Graph):
     create_books: List[ID] = Field(description='Create new `Book`s and return a list of ids for the created objects',
                                    arguments=[
-                                       RequiredListInputArgument[List[Book]]('data')
+                                       RequiredListInputArgument[Book]('data')
                                    ])
 
     async def mutate_create_books(self, info: GraphQLResolveInfo, data):

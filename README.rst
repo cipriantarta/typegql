@@ -220,9 +220,13 @@ For example:
 
 Change Log
 ==========
+2.0.9 [2019-10-29]
+------------------
+- changed the name of an input object from ObjectMuation to ObjectInput
+
 2.0.8 [2019-10-15]
 ------------------
-- allows forward reference between graph types (ie: `Book` as an `author` and an `Author` has `books`).
+- allows forward reference between graph types (ie: `Book` has an `author` and an `Author` has `books`).
     this only works with python 3.7(using `from __future__ import annotations`, or python 3.8
 
 2.0.6 [2019-06-24]
