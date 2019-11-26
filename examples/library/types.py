@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
-from decimal import Decimal
 from enum import Enum
-from typing import List
+from typing import List, Optional
 
-from typegql import Field, ID, OptionalField, ReadonlyField
-from typegql.core.graph import Graph
+from typegql import ID, Decimal
 from examples.library import db
 
 
@@ -18,43 +16,40 @@ class Gender(Enum):
     FEMALE = 'female'
 
 
-class GeoLocation(Graph):
-    latitude: Decimal = Field()
-    longitude: Decimal = Field()
-
-    def __init__(self, latitude, longitude):
-        self.latitude = latitude
-        self.longitude = longitude
+@dataclass
+class GeoLocation:
+    latitude: Decimal
+    longitude: Decimal
 
 
 @dataclass
-class Author(Graph):
+class Author:
     """Person that is usually a writer"""
 
-    id: ID = ReadonlyField()
-    name: str = Field()
-    gender: Gender = OptionalField()
-    geo: GeoLocation = OptionalField()
-    books: List[Book] = OptionalField()
+    id: ID = field(metadata={'readonly': True})
+    name: str
+    gender: Optional[Gender] = None
+    geo: Optional[GeoLocation] = None
+    books: Optional[List[Book]] = None
 
 
 @dataclass
-class Category(Graph):
-    id: ID = ReadonlyField()
-    name: str = Field()
+class Category:
+    id: ID = field(metadata={'readonly': True})
+    name: str
 
 
 @dataclass
-class Book(Graph):
+class Book:
     """A book... for reading :|"""
 
-    id: ID = ReadonlyField()
-    author_id: ID = Field()
-    title: str = OptionalField()
-    author: Author = ReadonlyField(description='The author of this book')
-    categories: List[Category] = OptionalField()
-    published: datetime = OptionalField()
-    tags: List[str] = OptionalField()
+    id: ID = field(metadata={'readonly': True})
+    author_id: ID
+    title: str
+    author: Optional[Author] = field(default=None, metadata={'description': 'The author of this book'})
+    categories: Optional[List[Category]] = None
+    published: Optional[datetime] = None
+    tags: Optional[List[str]] = None
 
     def __post_init__(self):
         self.published = datetime.strptime(self.published, '%Y-%m-%d %H:%M:%S')
@@ -63,7 +58,7 @@ class Book(Graph):
         data = filter(lambda x: x['id'] == self.author_id, db.get('authors'))
         data = next(data)
         author = Author(**data)
-        author.gender = Gender[author.gender.upper()].value
+        author.gender = Gender(author.gender)
         if 'geo' in data:
             author.geo = GeoLocation(**data.get('geo'))
         return author

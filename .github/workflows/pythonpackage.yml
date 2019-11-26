@@ -22,4 +22,4 @@ jobs:
         poetry install -E client
     - name: Test with pytest
       run: |
-        poetry run pytest --flake8 . --junitxml=test-results/all.xml
+        poetry run pytest --mypy --flake8 . --junitxml=test-results/all.xml

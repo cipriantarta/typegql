@@ -1,30 +1,33 @@
-from typing import TypeVar, Generic, List
+from dataclasses import dataclass, field
+from typing import Generic, List, TypeVar, Optional
 
 from .arguments import Argument
-from .fields import Field, OptionalField
-from .graph import Graph
 from .types import ID
 
-T = TypeVar('T', bound=Graph)
+T = TypeVar('T')
 
 
-class INode(Graph, Generic[T]):
-    id: ID = Field()
+@dataclass
+class INode(Generic[T]):
+    id: ID = field()
 
 
-class IEdge(Graph, Generic[T]):
-    node: INode[T] = Field(description='Scalar representing your data')
-    cursor: str = Field(description='Pagination cursor')
+@dataclass
+class IEdge(Generic[T]):
+    node: INode[T] = field(metadata={'description': 'Scalar representing your data'})
+    cursor: str = field(metadata={'description': 'Pagination cursor'})
 
 
-class IPageInfo(Graph):
-    start_cursor: str = Field(description='Pagination start cursor')
-    end_cursor: str = Field(description='Pagination end cursor')
+@dataclass
+class IPageInfo:
+    start_cursor: str = field(metadata={'description': 'Pagination start cursor'})
+    end_cursor: str = field(metadata={'description': 'Pagination end cursor'})
 
 
-class IConnection(Graph, Generic[T]):
-    edges: List[IEdge[T]] = Field(description='Connection edges')
-    page_info: IPageInfo = OptionalField(description='Pagination information')
+@dataclass
+class IConnection(Generic[T]):
+    edges: List[IEdge[T]] = field(metadata={'description': 'Connection edges'})
+    page_info: Optional[IPageInfo] = field(default=None, metadata={'description': 'Pagination information'})
 
     @classmethod
     def page_arguments(cls):
@@ -36,9 +39,11 @@ class IConnection(Graph, Generic[T]):
         ]
 
 
+@dataclass
 class PageInfo(IPageInfo):
     pass
 
 
+@dataclass
 class Connection(IConnection, Generic[T]):
-    page_info: PageInfo = OptionalField(description='Pagination information')
+    page_info: Optional[PageInfo] = field(default=None, metadata={'description': 'Pagination information'})

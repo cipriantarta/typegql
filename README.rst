@@ -5,13 +5,41 @@ TypeGQL
 ========
 
 A Python `GraphQL <https://graphql.org>`_ library that makes use of type hinting and concurrency support with the new async/await syntax.
+With the help of type hints and dataclass it's easy to build a GraphQL schema using nothing but Python objects and primitives
 
+**Consider the following:**
 
-DISCLAIMER
-==========
+.. code-block:: python
 
-This library is still in it's infancy, so **use with caution** and feel free to contribute.
+    from graphql import (
+        GraphQLSchema, GraphQLObjectType, GraphQLField, GraphQLString)
 
+    schema = GraphQLSchema(
+        query=GraphQLObjectType(
+            name='RootQueryType',
+            fields={
+                'hello': GraphQLField(
+                    GraphQLString,
+                    resolve=lambda obj, info: 'world')
+            }))
+
+**Versus:**
+
+.. code-block:: python
+
+    from dataclasses import dataclass
+    from typegql import Schema
+
+    @dataclass(init=False)
+    class RootQuery:
+        hello: str
+
+    def resolve_hello(info):
+        return 'world
+
+     schema = Schema(query=RootQuery)
+
+Clearly the second one looks more "Pythonic" and it's easier to maintain for complex structures
 
 Installation
 ============
@@ -32,18 +60,21 @@ Define your query
 
 .. code-block:: python
 
+    from dataclasses import dataclass
     from typing import List
-    from typegql.core.graph import Graph, Connection
+    from typegql.core.graph import Connection
     from typegql.examples.library.types import Author, Category
     from typegql.examples.library.types import Book
     from typegql.examples.library import db
 
-    class Query(Graph):
-        books: List[Book] = Field()
-        authors: List[Author] = Field()
-        categories: List[Category] = Field()
 
-        books_connection: Connection[Book] = Field(description='Relay connection')
+    @dataclass(init=False, repr=False)
+    class Query:
+        books: List[Book]
+        authors: List[Author]
+        categories: List[Category]
+
+        books_connection: Connection[Book]
 
         async def resolve_authors(self, info, **kwargs):
             return db.get('authors')
@@ -67,14 +98,12 @@ Define your types
 
 .. code-block:: python
 
-    from dataclasses import dataclass
+    from dataclasses import dataclass, field
     from datetime import datetime
     from decimal import Decimal
     from enum import Enum
     from typing import List
 
-    from typegql import Field, ID, OptionalField, ReadonlyField
-    from typegql.core.graph import Graph
     from examples.library import db
 
 
@@ -83,42 +112,40 @@ Define your types
         FEMALE = 'female'
 
 
-    class GeoLocation(Graph):
-    latitude: Decimal = Field()
-    longitude: Decimal = Field()
-
-    def __init__(self, latitude, longitude):
-        self.latitude = latitude
-        self.longitude = longitude
+    @dataclass
+    class GeoLocation:
+        latitude: Decimal
+        longitude: Decimal
 
 
     @dataclass
-    class Author(Graph):
+    class Author:
         """Person that is usually a writer"""
 
-        id: ID = ReadonlyField()
-        name: str = Field()
-        gender: Gender = OptionalField()
-        geo: GeoLocation = OptionalField()
+        id: ID = field(metadata={'readonly': True})
+        name: str
+        gender: Optional[Gender] = None
+        geo: Optional[GeoLocation] = None
+        books: Optional[List[Book]] = None
 
 
     @dataclass
-    class Category(Graph):
-        id: ID = ReadonlyField()
-        name: str = Field()
+    class Category:
+        id: ID = field(metadata={'readonly': True})
+        name: str
 
 
     @dataclass
-    class Book(Graph):
+    class Book:
         """A book... for reading :|"""
 
-        id: ID = ReadonlyField()
-        author_id: ID = Field()
-        title: str = OptionalField()
-        author: Author = ReadonlyField(description='The author of this book')
-        categories: List[Category] = OptionalField()
-        published: datetime = OptionalField()
-        tags: List[str] = OptionalField()
+        id: ID = field(metadata={'readonly': True})
+        author_id: ID
+        title: str
+        author: Optional[Author] = field(default=None, metadata={'description': 'The author of this book'})
+        categories: Optional[List[Category]] = None
+        published: Optional[datetime] = None
+        tags: Optional[List[str]] = None
 
         def __post_init__(self):
             self.published = datetime.strptime(self.published, '%Y-%m-%d %H:%M:%S')
@@ -127,7 +154,7 @@ Define your types
             data = filter(lambda x: x['id'] == self.author_id, db.get('authors'))
             data = next(data)
             author = Author(**data)
-            author.gender = Gender[author.gender.upper()].value
+            author.gender = Gender(author.gender)
             if 'geo' in data:
                 author.geo = GeoLocation(**data.get('geo'))
             return author
@@ -140,27 +167,6 @@ Define your types
         def resolve_tags(self, selections):
             return ['testing', 'purpose']
 
-
-Using Fields instead
---------------------
-
-You can use the following fields to define your GraphQL schema:
-
-.. code-block:: python
-
-    Field, InputField, RequiredField, OptionalField
-
-For example:
-
-.. code-block:: python
-
-    from typegql import Field, Connection, OptionalField
-
-
-    class Query(Graph):
-        authors: Author = Field()
-        categories: Category = Field(description="what's this?")
-        books_connection: Connection[Book] = OptionalField()
 
 Run your query
 --------------
@@ -220,6 +226,12 @@ For example:
 
 Change Log
 ==========
+3.0.1 [2019-11-26]
+------------------
+- BREAKING: Removed `Graph` as a baseclass
+- now makes use of `dataclasses.dataclass` and `dataclasess.fields` for building the `Schema`
+- bug fixing and improvements
+
 2.0.9 [2019-10-29]
 ------------------
 - changed the name of an input object from ObjectMuation to ObjectInput

@@ -5,7 +5,8 @@ from sanic import Sanic
 from sanic.response import json, html
 
 from typegql.core.schema import Schema
-from examples.library.query import Query, Mutation
+from examples.library.query import Query
+from examples.library.mutation import Mutation
 
 from examples.library.template import TEMPLATE
 

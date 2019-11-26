@@ -1,4 +1,4 @@
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Optional
 
 import aiohttp
 from graphql import get_introspection_query, build_client_schema, DocumentNode, ExecutionResult
@@ -19,8 +19,8 @@ class Client:
     """
     def __init__(self, url: str, auth=None, headers: Dict = None, use_json=True, timeout=None, camelcase=True):
         self.url = url
-        self.session: aiohttp.ClientSession = None
-        self.dsl: DSLSchema = None
+        self.session: Optional[aiohttp.ClientSession] = None
+        self.dsl: Optional[DSLSchema] = None
         self.auth = auth
         self.headers = headers
         self.use_json = use_json
@@ -48,6 +48,9 @@ class Client:
         return schema
 
     async def execute(self, query: str, variable_values=None, timeout=None) -> Tuple[int, ExecutionResult]:
+        if not self.session:
+            self.session = aiohttp.ClientSession()
+
         if isinstance(query, DocumentNode):
             query = self.dsl.as_string(query)
 
