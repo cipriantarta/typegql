@@ -226,6 +226,10 @@ For example:
 
 Change Log
 ==========
+3.0.2 [2019-11-26]
+------------------
+- PEP 561 compliant
+
 3.0.1 [2019-11-26]
 ------------------
 - BREAKING: Removed `Graph` as a baseclass
