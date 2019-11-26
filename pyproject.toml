@@ -29,5 +29,5 @@ pytest-mypy = "^0.4.2"
 client = ["aiohttp", "cchardet"]
 
 [build-system]
-requires = ["poetry>=0.12"]
+requires = ["poetry>=1.0.0b7"]
 build-backend = "poetry.masonry.api"
