@@ -27,4 +27,6 @@ jobs:
         poetry install -E client
     - name: Test with pytest
       run: |
+        export PATH=$PATH:$HOME/.poetry/bin
+        source $HOME/.poetry/env
         poetry run pytest --mypy --flake8 . --junitxml=test-results/all.xml
