@@ -22,6 +22,7 @@ jobs:
         python -m pip install --upgrade pip
         wget https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py
         python get-poetry.py --preview
+        rm get-poetry.py
         export PATH=$PATH:$HOME/.poetry/bin
         source $HOME/.poetry/env
         poetry install -E client
