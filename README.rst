@@ -226,6 +226,10 @@ For example:
 
 Change Log
 ==========
+3.0.3 [2019-11-29]
+------------------
+- fixed a bug where a custom connection arguments don't include the relay pagination arguments as well
+
 3.0.2 [2019-11-26]
 ------------------
 - PEP 561 compliant

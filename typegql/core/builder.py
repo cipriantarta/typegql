@@ -57,9 +57,12 @@ class SchemaBuilder:
             if self.is_required(field):
                 graph_type = graphql.GraphQLNonNull(graph_type)
             args = self.arguments(field.metadata.get('arguments'), self.camelcase)
-            if is_connection(_type) and not args:
-                args = self.arguments(_type.page_arguments())
-
+            if is_connection(_type):
+                pagination_args = self.arguments(_type.page_arguments())
+                if not args:
+                    args = pagination_args
+                elif pagination_args:
+                    args.update(pagination_args)
             field_name = field.metadata.get('alias', field.name)
             if self.camelcase:
                 field_name = snake_to_camel(field_name, upper=False)
