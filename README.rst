@@ -226,6 +226,11 @@ For example:
 
 Change Log
 ==========
+3.0.4 [2019-12-04]
+------------------
+- updates `graphql-core-next` to `grapqhl-core` >= 3
+- use Sequence instead of List where possible
+
 3.0.3 [2019-11-29]
 ------------------
 - fixed a bug where a custom connection arguments don't include the relay pagination arguments as well

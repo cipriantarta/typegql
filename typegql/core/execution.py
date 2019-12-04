@@ -1,4 +1,4 @@
-from typing import List, Any, Union
+from typing import Sequence, Any, Union
 
 from graphql import (
     ExecutionContext,
@@ -18,7 +18,7 @@ class TGQLExecutionContext(ExecutionContext):
     def resolve_field_value_or_error(
         self,
         field_def: GraphQLField,
-        field_nodes: List[FieldNode],
+        field_nodes: Sequence[FieldNode],
         resolve_fn: GraphQLFieldResolver,
         source: Any,
         info: GraphQLResolveInfo

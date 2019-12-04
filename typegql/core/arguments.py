@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar, List
+from typing import Generic, TypeVar, Sequence
 
 T = TypeVar('T')
 
@@ -36,13 +36,13 @@ class RequiredArgument(Argument, Generic[T]):
 class ArgumentList(Argument, Generic[T]):
     @property
     def type(self):
-        return List[self._type]
+        return Sequence[self._type]
 
 
 class RequiredArgumentList(RequiredArgument, Generic[T]):
     @property
     def type(self):
-        return List[self._type]
+        return Sequence[self._type]
 
 
 class InputArgument(Argument, Generic[T]):
@@ -58,10 +58,10 @@ class RequiredInputArgument(Argument, Generic[T]):
 class ListInputArgument(InputArgument, Generic[T]):
     @property
     def type(self):
-        return List[self._type]
+        return Sequence[self._type]
 
 
 class RequiredListInputArgument(RequiredInputArgument, Generic[T]):
     @property
     def type(self):
-        return List[self._type]
+        return Sequence[self._type]

@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Generic, List, TypeVar, Optional
+from typing import Generic, TypeVar, Optional, Sequence
 
 from .arguments import Argument
 from .types import ID
@@ -26,7 +26,7 @@ class IPageInfo:
 
 @dataclass
 class IConnection(Generic[T]):
-    edges: List[IEdge[T]] = field(metadata={'description': 'Connection edges'})
+    edges: Sequence[IEdge[T]] = field(metadata={'description': 'Connection edges'})
     page_info: Optional[IPageInfo] = field(default=None, metadata={'description': 'Pagination information'})
 
     @classmethod

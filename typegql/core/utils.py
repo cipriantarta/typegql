@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, List, Callable, Dict, Union
+from typing import Any, List, Callable, Dict, Union, Sequence
 
 from graphql.pyutils import camel_to_snake
 
@@ -8,7 +8,7 @@ from .connection import IConnection
 
 def is_list(_type: Any) -> bool:
     try:
-        return issubclass(_type.__origin__, List)
+        return issubclass(_type.__origin__, (List, Sequence))
     except AttributeError:
         return False
 

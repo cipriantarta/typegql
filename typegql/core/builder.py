@@ -1,6 +1,6 @@
 from dataclasses import MISSING, fields, is_dataclass, Field
 from functools import partial
-from typing import Type, Any, Dict, get_type_hints, Union, Optional, List, cast
+from typing import Type, Any, Dict, get_type_hints, Union, Optional, Sequence, cast
 
 import graphql
 from graphql import GraphQLInputField, GraphQLField, GraphQLType, GraphQLOutputType, GraphQLInterfaceType
@@ -170,7 +170,7 @@ class SchemaBuilder:
                 inner = _type.__args__[0]
                 graph_type = graphql.GraphQLList(self.get_edge_field(inner.__origin__, wrapped))
             else:
-                interfaces: List[GraphQLType] = []
+                interfaces: Sequence[GraphQLType] = []
                 if issubclass(_type, IPageInfo):
                     interfaces = [self.types['IPageInfo']]
                 graph_type = self.map_type(_type, interfaces=interfaces)
