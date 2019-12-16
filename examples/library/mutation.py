@@ -5,6 +5,7 @@ from graphql import GraphQLResolveInfo
 
 from typegql import ID, RequiredListInputArgument
 from examples.library.types import Book, Author
+from typegql.core.pubsub import pubsub
 
 
 @dataclass(init=False, repr=False)
@@ -16,7 +17,9 @@ class Mutation:
         ]})
 
     async def mutate_create_books(self, _: GraphQLResolveInfo, books: List[Dict]):
-        return [1]
+        result = [1]
+        pubsub.publish('books_added', result)
+        return result
 
     create_authors: List[ID] = field(metadata={
         'description': 'Create new `Author`s and return a list of ids for the created objects',

@@ -38,7 +38,7 @@ class SchemaBuilder:
                     field.default_factory is MISSING,  # type: ignore
                     not is_optional(field.type)])
 
-    def get_fields(self, graph: Type[T], is_mutation=False) -> Dict[str, Union[GraphQLField, GraphQLInputField]]:
+    def get_fields(self, graph: Type, is_mutation=False) -> Dict[str, Union[GraphQLField, GraphQLInputField]]:
         result: Dict[str, Union[GraphQLField, GraphQLInputField]] = dict()
         hints = get_type_hints(graph)
         for field in fields(graph):
@@ -194,7 +194,7 @@ class SchemaBuilder:
         self.types[type_name] = result
         return result
 
-    def get_edge_field(self, edge_type, inner: Type[T], camelcase=True):
+    def get_edge_field(self, edge_type, inner: Type, camelcase=True):
         connection_fields = dict()
         hints = get_type_hints(edge_type)
         for field in fields(edge_type):
@@ -221,7 +221,7 @@ class SchemaBuilder:
         self.types[type_name] = result
         return result
 
-    def get_node_fields(self, _type: Type[T]):
+    def get_node_fields(self, _type: Type):
         type_name = f'{_type.__name__}Node'
         if type_name in self.types:
             return self.types.get(type_name)

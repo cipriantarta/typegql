@@ -1,25 +1,27 @@
 import logging
 from dataclasses import is_dataclass
-from inspect import isclass
-from typing import Type, Any, Dict, Callable, Optional, TypeVar, cast
+from inspect import isclass, isawaitable
+from typing import Any, Callable, Dict, Optional, Type, cast
 
-from graphql import GraphQLSchema, GraphQLObjectType, graphql, OperationType, validate_schema, GraphQLType, \
-    GraphQLResolveInfo, GraphQLField
+from graphql import (GraphQLField, GraphQLObjectType, GraphQLResolveInfo, GraphQLSchema, GraphQLType, OperationType,
+                     graphql, parse, subscribe as gql_subscribe, validate_schema)
+from graphql.execution import ExecutionContext, Middleware
 from graphql.pyutils import camel_to_snake
 
 from .builder import SchemaBuilder
 from .execution import TGQLExecutionContext
+from .pubsub import pubsub
 from .utils import is_connection
 
 logger = logging.getLogger(__name__)
-T = TypeVar('T')
+ResolverType = Callable[[Any, GraphQLResolveInfo, Dict[str, Any]], Any]
 
 
 class Schema(GraphQLSchema):
     def __init__(self,
-                 query: Type[T] = None,
-                 mutation: Optional[Type[T]] = None,
-                 subscription: Optional[Type[T]] = None,
+                 query: Type = None,
+                 mutation: Optional[Type] = None,
+                 subscription: Optional[Type] = None,
                  types: Dict[str, GraphQLType] = None,
                  camelcase=True):
         super().__init__()
@@ -43,7 +45,7 @@ class Schema(GraphQLSchema):
             )
 
         if subscription:
-            self.subscription: object = subscription
+            self.subscription = subscription
             subscription_fields = builder.get_fields(subscription)
             subscription_gql = GraphQLObjectType(
                 'Subscription',
@@ -55,10 +57,14 @@ class Schema(GraphQLSchema):
         if errors:
             raise errors[0]
 
-    def _field_resolver(self, source, info, **kwargs):
+    def get_field_name(self, info: GraphQLResolveInfo):
         field_name = info.field_name
         if self.camelcase:
             field_name = camel_to_snake(field_name)
+        return field_name
+
+    def _field_resolver(self, source: Any, info: GraphQLResolveInfo, **kwargs):
+        field_name = self.get_field_name(info)
 
         if info.operation.operation == OperationType.MUTATION and isclass(source.__class__):
             mutation = getattr(source, f'mutate_{field_name}', None)
@@ -82,11 +88,28 @@ class Schema(GraphQLSchema):
             return value(info, **kwargs)
         return value
 
+    async def _subscription_field_resolver(self, source: Any, info: GraphQLResolveInfo, **kwargs):
+        field_name = self.get_field_name(info)
+
+        async for message in pubsub.subscribe(field_name):
+            method = getattr(source, f'on_{field_name}', None)
+            if not method:
+                value = message
+            else:
+                value = method(message)
+                if isawaitable(value):
+                    value = await value
+            yield {field_name: value}
+
     async def run(self, query: str,
                   root: Any = None,
-                  resolver: Callable[[Any, GraphQLResolveInfo, Dict[str, Any]], Any] = None,
-                  operation: str = None, context: Any = None, variables=None,
-                  middleware=None, execution_context_class=TGQLExecutionContext):
+                  resolver: ResolverType = None,
+                  operation: str = None,
+                  context: Any = None,
+                  variables: Dict[str, Any] = None,
+                  middleware: Middleware = None,
+                  execution_context_class: Type[ExecutionContext] = TGQLExecutionContext):
+        query = query.strip()
         if query.startswith('mutation') and not root:
             root = self.mutation()
         elif not root:
@@ -100,4 +123,26 @@ class Schema(GraphQLSchema):
                                variable_values=variables,
                                middleware=middleware,
                                execution_context_class=execution_context_class)
+        return result
+
+    async def subscribe(self,
+                        query: str,
+                        root: Any = None,
+                        subscription_resolver: ResolverType = None,
+                        resolver: ResolverType = None,
+                        operation: str = None,
+                        context: Any = None,
+                        variables: Dict[str, Any] = None):
+        if not root:
+            root = self.subscription()
+
+        document = parse(query)
+        result = await gql_subscribe(self,
+                                     document,
+                                     root,
+                                     context,
+                                     variables,
+                                     operation,
+                                     resolver or self._field_resolver,
+                                     subscription_resolver or self._subscription_field_resolver)
         return result

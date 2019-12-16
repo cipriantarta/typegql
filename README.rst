@@ -226,6 +226,10 @@ For example:
 
 Change Log
 ==========
+3.0.5 [2019-12-16]
+------------------
+- added support for subscriptions
+
 3.0.4 [2019-12-04]
 ------------------
 - updates `graphql-core-next` to `grapqhl-core` >= 3

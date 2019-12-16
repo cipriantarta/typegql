@@ -3,6 +3,8 @@ from graphql import get_introspection_query
 
 from typegql.core.schema import Schema
 from examples.library.query import Query
+from examples.library.mutation import Mutation
+from examples.library.subscription import Subscription
 
 
 def pytest_collection_modifyitems(items):
@@ -16,7 +18,7 @@ def pytest_collection_modifyitems(items):
 
 @pytest.fixture
 def schema():
-    schema = Schema(Query)
+    schema = Schema(Query, mutation=Mutation, subscription=Subscription)
     return schema
 
 

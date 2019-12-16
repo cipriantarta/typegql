@@ -42,7 +42,8 @@ class Client:
 
     async def introspection(self):
         status, result = await self.execute(get_introspection_query())
-        assert status == 200, f'{status} - {result}'
+        if status != 200:
+            raise ValueError(f'Error in schema introspection. {status} - {result}')
         schema = build_client_schema(result.data)
         self.dsl = DSLSchema(schema, camelcase=self.camelcase)
         return schema
@@ -70,7 +71,8 @@ class Client:
                                      timeout=timeout or self.timeout,
                                      **body) as response:
             result = await response.json() if self.use_json else response.text()
-            assert 'errors' in result or 'data' in result, f'Received non-compatible response "{result}"'
+            if 'errors' not in result or 'data' not in result:
+                raise ValueError(f'Received incompatible response "{result}"')
 
             return response.status, ExecutionResult(
                 errors=result.get('errors'),

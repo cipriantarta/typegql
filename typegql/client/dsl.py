@@ -33,7 +33,8 @@ class DSLField:
             self.args_to_camelcase(kwargs)
         for name, value in kwargs.items():
             arg = self.field.args.get(name)
-            assert arg, f'Invalid argument {name} for field {self.name}'
+            if not arg:
+                raise ValueError(f'Invalid argument {name} for field {self.name}')
             arg_type_serializer = get_arg_serializer(arg.type)
             value = arg_type_serializer(value)
             self.ast_field.arguments.append(
@@ -141,7 +142,8 @@ def get_ast_value(value):
 def serialize_list(serializer, values):
     if isinstance(values, str):
         values = [values]
-    assert isinstance(values, collections.Iterable), 'Expected iterable, received "{}"'.format(repr(values))
+    if not isinstance(values, collections.Iterable):
+        raise ValueError(f'Expected iterable, received "{repr(values)}"')
     result = list()
     for val in values:
         result.append(serializer(val))

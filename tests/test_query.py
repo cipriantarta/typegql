@@ -1,5 +1,5 @@
 async def test__books_connection__ok(schema):
-    query = '''
+    query = """
     query BooksConnection {
       booksConnection {
         totalCount
@@ -12,7 +12,7 @@ async def test__books_connection__ok(schema):
         }
       }
     }
-    '''
+    """
     result = await schema.run(query)
     assert result.data
     assert 'booksConnection' in result.data
@@ -24,7 +24,7 @@ async def test__books_connection__ok(schema):
 
 
 async def test__author_connection_with_enum__ok(schema):
-    query = '''
+    query = """
     query AuthorsConnection {
       authorsConnection {
         totalCount
@@ -36,7 +36,7 @@ async def test__author_connection_with_enum__ok(schema):
         }
       }
     }
-    '''
+    """
     result = await schema.run(query)
     assert result.data
     assert 'authorsConnection' in result.data
@@ -49,8 +49,8 @@ async def test__author_connection_with_enum__ok(schema):
     assert result
 
 
-async def test__authors(schema):
-    query = '''
+async def test__authors__ok(schema):
+    query = """
         query Authors {
           authors {
             id
@@ -62,7 +62,7 @@ async def test__authors(schema):
             }
           }
         }
-        '''
+        """
     result = await schema.run(query)
     assert result.data
     assert 'authors' in result.data
