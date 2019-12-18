@@ -37,6 +37,10 @@ class Author(Graph):
     geo: GeoLocation = OptionalField()
     books: List[Book] = OptionalField()
 
+    def __post_init__(self):
+        if isinstance(self.geo, OptionalField):
+            self.geo = None
+
 
 @dataclass
 class Category(Graph):
