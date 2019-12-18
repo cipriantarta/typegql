@@ -16,3 +16,4 @@ __pycache__
 *.egg-info
 *.py[cod]
 *.swp
+test-results/
