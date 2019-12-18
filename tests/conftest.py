@@ -9,6 +9,8 @@ def pytest_collection_modifyitems(items):
     for item in items:
         if not hasattr(item, 'fixturenames'):
             setattr(item, 'fixturenames', list())
+        if not hasattr(item, 'obj'):
+            setattr(item, 'obj', None)
         item.add_marker(pytest.mark.asyncio)
 
 
