@@ -1,10 +1,12 @@
+import ast
+
 import base64
 from datetime import datetime
 from typing import Dict
 
 import graphql
 from graphql.error import InvalidType
-from graphql.language import ast
+from graphql.language import ast as graphql_ast
 
 
 class DateTime(graphql.GraphQLScalarType):
@@ -25,7 +27,7 @@ class DateTime(graphql.GraphQLScalarType):
 
     @staticmethod
     def parse_literal(node):
-        if isinstance(node, ast.StringValueNode):
+        if isinstance(node, graphql_ast.StringValueNode):
             try:
                 return datetime.fromisoformat(node.value)
             except ValueError:
@@ -68,15 +70,15 @@ class Dictionary(graphql.GraphQLScalarType):
 
     @staticmethod
     def parse_literal(node):
-        if isinstance(node, ast.StringValueNode):
+        if isinstance(node, graphql_ast.StringValueNode):
             try:
-                return eval(node.value)
+                return ast.literal_eval(node.value)
             except ValueError:
                 return InvalidType()
 
     @staticmethod
     def parse_value(value: str):
         try:
-            return eval(value)
+            return ast.literal_eval(value)
         except ValueError:
             return InvalidType()
