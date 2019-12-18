@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Dict
 
 import graphql
+from graphql.error import InvalidType
 from graphql.language import ast
 
 
@@ -28,14 +29,14 @@ class DateTime(graphql.GraphQLScalarType):
             try:
                 return datetime.fromisoformat(node.value)
             except ValueError:
-                pass
+                return InvalidType()
 
     @staticmethod
     def parse_value(value: str):
         try:
             return datetime.fromisoformat(value)
         except ValueError:
-            pass
+            return InvalidType()
 
 
 class ID(graphql.GraphQLScalarType):
@@ -71,11 +72,11 @@ class Dictionary(graphql.GraphQLScalarType):
             try:
                 return eval(node.value)
             except ValueError:
-                pass
+                return InvalidType()
 
     @staticmethod
     def parse_value(value: str):
         try:
             return eval(value)
         except ValueError:
-            pass
+            return InvalidType()
