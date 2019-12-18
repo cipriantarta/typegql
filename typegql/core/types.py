@@ -74,14 +74,14 @@ class DateTime(graphql.GraphQLScalarType):
             try:
                 return datetime.fromisoformat(node.value)
             except ValueError:
-                pass
+                return InvalidType()
 
     @staticmethod
     def parse_value(value: str):
         try:
             return datetime.fromisoformat(value)
         except ValueError:
-            pass
+            return InvalidType()
 
 
 class Dictionary(graphql.GraphQLScalarType):
@@ -105,14 +105,14 @@ class Dictionary(graphql.GraphQLScalarType):
             try:
                 return ast.literal_eval(node.value)
             except ValueError:
-                pass
+                return InvalidType()
 
     @staticmethod
     def parse_value(value: Any) -> Any:
         try:
             return ast.literal_eval(value)
         except ValueError:
-            pass
+            return InvalidType()
 
 
 class Decimal(graphql.GraphQLScalarType):
@@ -136,14 +136,14 @@ class Decimal(graphql.GraphQLScalarType):
             try:
                 return ast.literal_eval(node.value)
             except ValueError:
-                pass
+                return InvalidType()
 
     @staticmethod
     def parse_value(value: Any) -> Any:
         try:
             return ast.literal_eval(value)
         except ValueError:
-            pass
+            return InvalidType()
 
 
 class EnumValue(GraphQLEnumValue):
