@@ -1,6 +1,6 @@
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import List, Generic, TypeVar, Optional
+from typing import List, Generic, TypeVar, Optional, Any
 
 from graphql import GraphQLResolveInfo
 
@@ -15,6 +15,11 @@ T = TypeVar('T')
 @dataclass
 class CustomConnection(Connection, Generic[T]):
     total_count: Optional[int] = field(default=None)
+
+    @classmethod
+    async def resolve(cls, source: Any, field_name: str, connection_type: T, info: GraphQLResolveInfo, **kwargs):
+        func = getattr(source, f'resolve_{field_name}')
+        return await func(info, **kwargs)
 
 
 @dataclass(init=False, repr=False)

@@ -1,3 +1,4 @@
+import inspect
 import logging
 from dataclasses import is_dataclass
 from inspect import isclass, isawaitable
@@ -72,12 +73,14 @@ class Schema(GraphQLSchema):
                 return mutation(info, **kwargs)
 
         if is_dataclass(source.__class__):
-            _type = source.__dataclass_fields__.get(field_name)
+            field = source.__dataclass_fields__.get(field_name)
 
-            if is_connection(_type):
-                method = getattr(_type, 'resolve', None)
-                if method:
-                    return method(source, field_name, _type.__args__[0], info, **kwargs)
+            if is_connection(field.type):
+                func = getattr(field.type, 'resolve', None)
+                if func and inspect.ismethod(func):
+                    return func(source, field_name, field.type.__args__[0], info, **kwargs)
+                else:
+                    logger.error(f'Expected {func} to be a method. Ignoring')
 
         value = (
             source.get(field_name)

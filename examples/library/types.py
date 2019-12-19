@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
+from decimal import Decimal
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Dict
 
-from typegql import ID, Decimal
+from typegql import ID
 from examples.library import db
 
 
@@ -31,6 +32,10 @@ class Author:
     gender: Optional[Gender] = None
     geo: Optional[GeoLocation] = None
     books: Optional[List[Book]] = None
+
+    @classmethod
+    def load(cls, data: Dict):  # can be used to manipulate / validate input data
+        return data
 
 
 @dataclass

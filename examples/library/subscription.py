@@ -8,6 +8,7 @@ from typegql import ID
 
 @dataclass(init=False, repr=False)
 class Subscription:
+    authors_added: Sequence[ID]
     books_added: Sequence[ID]
 
     def __init__(self):
