@@ -20,10 +20,6 @@ classifiers=[
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
     "Topic :: Software Development",
-    "Topic :: Software Development :: GraphQL",
-    "Topic :: Software Development :: API",
-    "Topic :: Software Development :: asyncio",
-    "Topic :: Software Development :: typing",
 ]
 
 [tool.poetry.dependencies]
