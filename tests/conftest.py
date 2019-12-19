@@ -22,6 +22,11 @@ def schema():
     return schema
 
 
+@pytest.fixture()
+def schema_type():
+    return Schema
+
+
 @pytest.fixture
 def introspection_query():
     return get_introspection_query()

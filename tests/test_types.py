@@ -67,4 +67,4 @@ async def test__enum_type__ok():
     assert isinstance(et.serialize('RED'), InvalidType)
     assert et.values['RED'].value == RGBEnum.RED
 
-    assert et.serialize(CMYEnum.CYAN) == CMYEnum.CYAN.value  # TODO: Fix?
+    assert isinstance(et.serialize(CMYEnum.CYAN), InvalidType)

@@ -28,4 +28,6 @@ class Mutation:
         ]})
 
     async def mutate_create_authors(self, _: GraphQLResolveInfo, authors: List[Dict]):
-        return [1]
+        result = [1]
+        pubsub.publish('authors_added', result)
+        return result

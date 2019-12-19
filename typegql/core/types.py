@@ -34,16 +34,13 @@ class ID(graphql.GraphQLScalarType):
 
     def parse_literal(self, node: ValueNode, _variables: Dict[str, Any] = None):
         if isinstance(node, graphql_ast.StringValueNode):
-            try:
-                return base64.b64decode(node.value).decode()
-            except ValueError:
-                return InvalidType()
-        return super().parse_literal(node, _variables)
+            return self.parse_value(node.value)
+        return InvalidType()
 
     @staticmethod
     def parse_value(value: Any) -> Any:
         try:
-            return base64.b64decode(value).decode()
+            return ID.decode(value)
         except ValueError:
             return InvalidType()
 
@@ -58,8 +55,8 @@ class DateTime(graphql.GraphQLScalarType):
             name=name,
             description='The `DateTime` scalar type represents a DateTime value as specified by '
                         '[iso8601](https://en.wikipedia.org/wiki/ISO_8601).',
-            serialize=DateTime.serialize,
-            parse_value=DateTime.parse_value,
+            serialize=self.serialize,
+            parse_value=self.parse_value,
             parse_literal=self.parse_literal,
         )
 
@@ -71,7 +68,7 @@ class DateTime(graphql.GraphQLScalarType):
 
     def parse_literal(self, node: ValueNode, _variables: Dict[str, Any] = None):
         if isinstance(node, graphql_ast.StringValueNode):
-            return DateTime.parse_value(node.value)
+            return self.parse_value(node.value)
         return InvalidType()
 
     @staticmethod
@@ -87,8 +84,8 @@ class Dictionary(graphql.GraphQLScalarType):
         super().__init__(
             name=name,
             description='The`Dictionary` type is a KV mapping type',
-            serialize=Dictionary.serialize,
-            parse_value=Dictionary.parse_value,
+            serialize=self.serialize,
+            parse_value=self.parse_value,
             parse_literal=self.parse_literal,
         )
 
@@ -100,7 +97,7 @@ class Dictionary(graphql.GraphQLScalarType):
 
     def parse_literal(self, node: ValueNode, _variables: Dict[str, Any] = None):
         if isinstance(node, graphql_ast.StringValueNode):
-            return Dictionary.parse_value(node.value)
+            return self.parse_value(node.value)
         return InvalidType()
 
     @staticmethod
@@ -116,8 +113,8 @@ class Decimal(graphql.GraphQLScalarType):
         super().__init__(
             name=name,
             description='Floating point class for decimal arithmetic.',
-            serialize=Decimal.serialize,
-            parse_value=Decimal.parse_value,
+            serialize=self.serialize,
+            parse_value=self.parse_value,
             parse_literal=self.parse_literal,
         )
 
@@ -130,8 +127,8 @@ class Decimal(graphql.GraphQLScalarType):
         return value
 
     def parse_literal(self, node: ValueNode, _variables: Dict[str, Any] = None):
-        if isinstance(node, graphql_ast.FloatValueNode):
-            return Decimal.parse_value(node.value)
+        if isinstance(node, (graphql_ast.FloatValueNode, graphql_ast.StringValueNode, graphql_ast.IntValueNode)):
+            return self.parse_value(node.value)
         return InvalidType()
 
     @staticmethod
@@ -159,8 +156,9 @@ class EnumType(GraphQLEnumType):
             name=name,
             values={name: EnumValue(value) for name, value in _type.__members__.items()},
             description=str(_type.__doc__))
+        self._type = _type
 
     def serialize(self, value: Any) -> Union[str, None, InvalidType]:
-        if not isinstance(value, Enum):
+        if not isinstance(value, self._type):
             return InvalidType('Enum value expected')
         return value.value
