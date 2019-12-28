@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
-from typing import List, Optional, Dict
+from typing import List, Optional, Mapping
 
 from typegql import ID
 from examples.library import db
@@ -34,7 +34,7 @@ class Author:
     books: Optional[List[Book]] = None
 
     @classmethod
-    def load(cls, data: Dict):  # can be used to manipulate / validate input data
+    def load(cls, **data: Mapping):  # can be used to manipulate / validate input data
         return data
 
 

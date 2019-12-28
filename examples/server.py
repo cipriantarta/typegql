@@ -15,7 +15,7 @@ from examples.library.template import TEMPLATE
 from typegql.core.schema import Schema
 
 logger = logging.getLogger('sanic.error')
-app = Sanic()
+app = Sanic(name='TypeGQL')
 schema = Schema(query=Query, mutation=Mutation, subscription=Subscription)
 channels = {'books': EventEmitter()}
 

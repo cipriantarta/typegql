@@ -10,7 +10,7 @@ from typegql.core.graph import GraphHelper
 from .arguments import Argument, ArgumentList
 from .connection import IConnection, INode, IEdge, IPageInfo, T
 from .types import ID, DateTime, Dictionary, Decimal, EnumType
-from .utils import is_enum, is_list, is_connection, to_snake, is_optional
+from .utils import is_enum, is_list, is_connection, to_snake, is_optional, load
 
 
 class SchemaBuilder:
@@ -41,6 +41,8 @@ class SchemaBuilder:
     def get_fields(self, graph: Type, is_mutation=False) -> Dict[str, Union[GraphQLField, GraphQLInputField]]:
         result: Dict[str, Union[GraphQLField, GraphQLInputField]] = dict()
         hints = get_type_hints(graph)
+        if not is_dataclass(graph):
+            raise ValueError(f'Expected dataclass for {graph}.')
         for field in fields(graph):
             if field.name.startswith('_'):
                 continue
@@ -128,7 +130,7 @@ class SchemaBuilder:
         else:
             load_method = getattr(_type, 'load', None)
             if load_method and self.camelcase:
-                load_method = partial(to_snake, callback=load_method)
+                load_method = partial(load, callback=load_method)
             elif self.camelcase:
                 load_method = to_snake
             graph_type = graphql.GraphQLInputObjectType(type_name,
