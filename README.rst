@@ -203,7 +203,7 @@ Client
 ======
 
 TypeGQL supports DSL client for working with a GraphQL API.
-The client automatically converts snake to camelcase. set `camelcase=False` if this is not desired
+The client automatically converts snake to camelcase. Set `camelcase=False` if this is not desired.
 
 .. code-block:: python
 
@@ -226,6 +226,10 @@ For example:
 
 Change Log
 ==========
+3.0.8 [2020-01-07]
+------------------
+- added ability to ignore attributes in building the schema by using `field(metadata={'skip': True})`. This can be useful when you don't want to expose certain fields in GraphQL, like a user's `password` for example.
+
 3.0.5 [2019-12-16]
 ------------------
 - added support for subscriptions

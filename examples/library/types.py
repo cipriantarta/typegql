@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
-from typing import List, Optional, Mapping
+from typing import List, Optional
 
 from typegql import ID
 from examples.library import db
@@ -29,13 +29,15 @@ class Author:
 
     id: ID = field(metadata={'readonly': True})
     name: str
+    password: str = field(metadata={'skip': True})  # Ignore this field when building the schema
     gender: Optional[Gender] = None
     geo: Optional[GeoLocation] = None
     books: Optional[List[Book]] = None
 
     @classmethod
-    def load(cls, **data: Mapping):  # can be used to manipulate / validate input data
-        return data
+    def load(cls, **data):  # can be used to manipulate / validate input data
+        data = {'id': None, 'password': '', **data}
+        return cls(**data)
 
 
 @dataclass
@@ -62,7 +64,7 @@ class Book:
     async def resolve_author(self, info):
         data = filter(lambda x: x['id'] == self.author_id, db.get('authors'))
         data = next(data)
-        author = Author(**data)
+        author = Author.load(**data)
         author.gender = Gender(author.gender)
         if 'geo' in data:
             author.geo = GeoLocation(**data.get('geo'))

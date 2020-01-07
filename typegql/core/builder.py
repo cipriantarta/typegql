@@ -33,7 +33,6 @@ class SchemaBuilder:
         return field.metadata.get('readonly', False)
 
     def is_required(self, field: Field) -> bool:
-        # TODO: remove ignore below after  https://github.com/python/mypy/issues/6910 gets fixed
         return all([field.default is MISSING,
                     field.default_factory is MISSING,  # type: ignore
                     not is_optional(field.type)])
@@ -44,7 +43,7 @@ class SchemaBuilder:
         if not is_dataclass(graph):
             raise ValueError(f'Expected dataclass for {graph}.')
         for field in fields(graph):
-            if field.name.startswith('_'):
+            if field.name.startswith('_') or field.metadata.get('skip') is True:
                 continue
             _type = hints.get(field.name, field.type)
             if is_optional(_type):
