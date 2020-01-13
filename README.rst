@@ -226,6 +226,11 @@ For example:
 
 Change Log
 ==========
+3.0.9 [2020-01-13]
+------------------
+- fix client execution function
+- update `dsl` selections to work with `FrozenList`
+
 3.0.8 [2020-01-07]
 ------------------
 - added ability to ignore attributes in building the schema by using `field(metadata={'skip': True})`. This can be useful when you don't want to expose certain fields in GraphQL, like a user's `password` for example.

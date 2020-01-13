@@ -5,7 +5,7 @@ from functools import partial
 from graphql import GraphQLField, print_ast, ast_from_value, GraphQLNonNull, GraphQLInputField, GraphQLList, \
     GraphQLEnumType, GraphQLInputObjectType, OperationType, GraphQLString
 from graphql.language import ast
-from graphql.pyutils import snake_to_camel
+from graphql.pyutils import snake_to_camel, FrozenList
 
 
 class DSLField:
@@ -16,9 +16,13 @@ class DSLField:
         self.camelcase = camelcase
 
     def select(self, *fields):
+        selection_nodes = list(selections(*fields))
         if not self.ast_field.selection_set:
-            self.ast_field.selection_set = ast.SelectionSetNode(selections=[])
-        self.ast_field.selection_set.selections.extend(selections(*fields))
+            self.ast_field.selection_set = ast.SelectionSetNode(selections=FrozenList(selection_nodes))
+            return self
+
+        selection_nodes.extend(self.ast_field.selection_set.selections)
+        self.ast_field.selection_set = ast.SelectionSetNode(selections=FrozenList(selection_nodes))
         return self
 
     def __call__(self, *args, **kwargs):
@@ -31,18 +35,21 @@ class DSLField:
     def args(self, **kwargs):
         if self.camelcase:
             self.args_to_camelcase(kwargs)
+        argument_nodes = list()
         for name, value in kwargs.items():
             arg = self.field.args.get(name)
             if not arg:
                 raise ValueError(f'Invalid argument {name} for field {self.name}')
             arg_type_serializer = get_arg_serializer(arg.type)
             value = arg_type_serializer(value)
-            self.ast_field.arguments.append(
+
+            argument_nodes.append(
                 ast.ArgumentNode(
                     name=ast.NameNode(value=name),
                     value=get_ast_value(value)
                 )
             )
+        self.ast_field.arguments = FrozenList(argument_nodes)
         return self
 
     def args_to_camelcase(self, arguments):
