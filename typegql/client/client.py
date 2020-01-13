@@ -71,7 +71,7 @@ class Client:
                                      timeout=timeout or self.timeout,
                                      **body) as response:
             result = await response.json() if self.use_json else response.text()
-            if 'errors' not in result or 'data' not in result:
+            if 'errors' not in result and 'data' not in result:
                 raise ValueError(f'Received incompatible response "{result}"')
 
             return response.status, ExecutionResult(
