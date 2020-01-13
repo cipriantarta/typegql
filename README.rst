@@ -229,6 +229,7 @@ Change Log
 3.0.9 [2020-01-13]
 ------------------
 - fix client execution function
+- update `dsl` selections to work with `FrozenList`
 
 3.0.8 [2020-01-07]
 ------------------
