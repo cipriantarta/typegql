@@ -34,7 +34,7 @@ def is_optional(_type: Any) -> bool:
     return False
 
 
-def to_snake(arguments: Dict, callback: Callable[[Dict], Any] = None) -> Dict[str, Any]:
+def to_snake(arguments: Dict) -> Dict[str, Any]:
     if not isinstance(arguments, dict) or not arguments:
         return arguments
     result = dict()
@@ -46,6 +46,8 @@ def to_snake(arguments: Dict, callback: Callable[[Dict], Any] = None) -> Dict[st
         elif isinstance(value, dict):
             result[camel] = to_snake(value)
         result[camel] = value
-    if callback:
-        return callback(result)
     return result
+
+
+def load(data: Dict[str, Any], callback: Callable[..., Any]) -> Any:
+    return callback(**data)

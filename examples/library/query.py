@@ -44,7 +44,7 @@ class Query:
         for author in db.get('authors'):
             data = deepcopy(author)
             data['gender'] = Gender(data['gender'])
-            authors.append(Author(**data))
+            authors.append(Author.load(**data))
 
         for author in authors:
             author.books = [Book(**book) for book in db.get('books') if book['author_id'] == author.id]
@@ -91,7 +91,7 @@ class Query:
             } for node in data]}
 
     async def resolve_authors_connection(self, info, first=None, last=None, **kwargs):
-        data = [Author(**author) for author in db.get('authors')]
+        data = [Author.load(**author) for author in db.get('authors')]
         for a in data:
             if a.gender:
                 a.gender = Gender(a.gender)  # Send gender as Enum not as string
