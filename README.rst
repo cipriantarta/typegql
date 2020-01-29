@@ -226,6 +226,10 @@ For example:
 
 Change Log
 ==========
+3.1.0 [2020-01-29]
+------------------
+- fixes an issue with camelcase parameters when a `load` method is provided
+
 3.0.9 [2020-01-13]
 ------------------
 - fix client execution function

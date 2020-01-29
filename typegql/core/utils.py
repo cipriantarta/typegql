@@ -49,5 +49,6 @@ def to_snake(arguments: Dict) -> Dict[str, Any]:
     return result
 
 
-def load(data: Dict[str, Any], callback: Callable[..., Any]) -> Any:
+def load(data: Dict[str, Any], callback: Callable[..., Any], camelcase: bool) -> Any:
+    data = data if not camelcase else to_snake(data)
     return callback(**data)

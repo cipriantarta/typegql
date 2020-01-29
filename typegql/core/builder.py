@@ -128,8 +128,8 @@ class SchemaBuilder:
                                                    interfaces=interfaces)
         else:
             load_method = getattr(_type, 'load', None)
-            if load_method and self.camelcase:
-                load_method = partial(load, callback=load_method)
+            if load_method:
+                load_method = partial(load, callback=load_method, camelcase=self.camelcase)
             elif self.camelcase:
                 load_method = to_snake
             graph_type = graphql.GraphQLInputObjectType(type_name,
