@@ -12,11 +12,11 @@ from examples.library.mutation import Mutation
 from examples.library.query import Query
 from examples.library.subscription import Subscription
 from examples.library.template import TEMPLATE
-from typegql.core.schema import Schema
+from typegql.schema import Schema
 
 logger = logging.getLogger('sanic.error')
 app = Sanic(name='TypeGQL')
-schema = Schema(query=Query, mutation=Mutation, subscription=Subscription)
+schema = Schema(query=Query)  # , mutation=Mutation, subscription=Subscription)
 channels = {'books': EventEmitter()}
 
 

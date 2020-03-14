@@ -35,6 +35,8 @@ pytest-asyncio = "^0.10.0"
 pytest-cov = "^2.8.1"
 flake8-quotes = "^2.1.1"
 bandit = "^1.6.2"
+ipython = "^7.13.0"
+pudb = "^2019.2"
 
 [tool.poetry.extras]
 client = ["aiohttp", "cchardet"]
