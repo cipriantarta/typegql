@@ -11,7 +11,7 @@ from graphql import (
 )
 from graphql.execution.values import get_argument_values
 
-from typegql.core.utils import to_snake
+from typegql.builder.utils import to_snake
 
 
 class TGQLExecutionContext(ExecutionContext):

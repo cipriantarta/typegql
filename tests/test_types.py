@@ -5,7 +5,7 @@ from enum import Enum
 from graphql import StringValueNode, FloatValueNode, ValueNode
 from graphql.error import InvalidType
 
-from typegql.core.types import DateTime, Decimal, Dictionary, EnumType
+from typegql.builder.types import DateTime, Decimal, Dictionary, EnumType
 
 
 async def test__datetime_type__ok():

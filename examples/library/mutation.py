@@ -5,7 +5,7 @@ from graphql import GraphQLResolveInfo
 
 from typegql import ID, RequiredListInputArgument
 from examples.library.types import Book, Author
-from typegql.core.pubsub import pubsub
+from typegql.pubsub import pubsub
 
 
 @dataclass(init=False, repr=False)

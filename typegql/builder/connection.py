@@ -9,23 +9,27 @@ T = TypeVar('T')
 
 @dataclass
 class INode(Generic[T]):
+    """Relay node interface"""
     id: ID = field()
 
 
 @dataclass
 class IEdge(Generic[T]):
+    """Relay edge interface"""
     node: INode[T] = field(metadata={'description': 'Scalar representing your data'})
     cursor: str = field(metadata={'description': 'Pagination cursor'})
 
 
 @dataclass
 class IPageInfo:
+    """Relay pagination interface"""
     start_cursor: str = field(metadata={'description': 'Pagination start cursor'})
     end_cursor: str = field(metadata={'description': 'Pagination end cursor'})
 
 
 @dataclass
 class IConnection(Generic[T]):
+    """Relay connection interface"""
     edges: Sequence[IEdge[T]] = field(metadata={'description': 'Connection edges'})
     page_info: Optional[IPageInfo] = field(default=None, metadata={'description': 'Pagination information'})
 

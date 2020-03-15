@@ -2,22 +2,20 @@ import inspect
 import logging
 from dataclasses import is_dataclass
 from inspect import isclass, isawaitable
-from typing import Any, Callable, Dict, Optional, Type, cast
+from typing import Any, Callable, Dict, Optional, Type
 
 from graphql import (
-    GraphQLField,
     GraphQLObjectType,
-    GraphQLOutputType,
     GraphQLResolveInfo,
     GraphQLSchema,
-    GraphQLType,
     OperationType,
     graphql, parse, subscribe as gql_subscribe,
     validate_schema)
 from graphql.execution import ExecutionContext, Middleware
 from graphql.pyutils import camel_to_snake
 
-from .builder.query import QueryBuilder
+from .builder import Builder, GraphQLInputObjectTypeMap, GraphQLObjectTypeMap, GraphQLScalarMap, GraphQLEnumMap, \
+    GraphQLInterfaceMap
 from .builder.utils import is_connection
 from .execution import TGQLExecutionContext
 from .pubsub import pubsub
@@ -28,38 +26,47 @@ ResolverType = Callable[[Any, GraphQLResolveInfo, Dict[str, Any]], Any]
 
 class Schema(GraphQLSchema):
     def __init__(self,
-                 query: Type = None,
+                 query: Type,
                  mutation: Optional[Type] = None,
                  subscription: Optional[Type] = None,
-                 types: Dict[str, GraphQLOutputType] = None,
+                 scalars: Optional[GraphQLScalarMap] = None,
+                 enums: Optional[GraphQLEnumMap] = None,
+                 interfaces: Optional[GraphQLInterfaceMap] = None,
+                 query_types: Optional[GraphQLObjectTypeMap] = None,
+                 mutation_types: Optional[GraphQLInputObjectTypeMap] = None,
                  camelcase=True):
         super().__init__()
         self.camelcase = camelcase
-        query_builder = QueryBuilder(self.camelcase, types=types)
+        builder = Builder(self.camelcase,
+                          scalars=scalars,
+                          enums=enums,
+                          interfaces=interfaces,
+                          query_types=query_types,
+                          mutation_types=mutation_types)
         query_gql, mutation_gql, subscription_gql = None, None, None
         if query:
             self.query = query
-            query_fields = query_builder.fields(query)
+            fields = builder.query_fields(query)
             query_gql = GraphQLObjectType(
                 'Query',
-                fields=query_fields,
+                fields=fields,
             )
 
-#         if mutation:
-#             self.mutation = mutation
-#             mutation_fields = builder.get_fields(mutation)
-#             mutation_gql = GraphQLObjectType(
-#                 'Mutation',
-#                 fields=cast(Dict[str, GraphQLField], mutation_fields)
-#             )
+        if mutation:
+            self.mutation = mutation
+            mutation_fields = builder.query_fields(mutation)
+            mutation_gql = GraphQLObjectType(
+                'Mutation',
+                fields=mutation_fields
+            )
 
-#         if subscription:
-#             self.subscription = subscription
-#             subscription_fields = builder.get_fields(subscription)
-#             subscription_gql = GraphQLObjectType(
-#                 'Subscription',
-#                 fields=cast(Dict[str, GraphQLField], subscription_fields)
-#             )
+        if subscription:
+            self.subscription = subscription
+            subscription_fields = builder.query_fields(subscription)
+            subscription_gql = GraphQLObjectType(
+                'subscription',
+                fields=subscription_fields
+            )
 
         super().__init__(query_gql, mutation_gql, subscription_gql)
         errors = validate_schema(self)

@@ -62,7 +62,7 @@ Define your query
 
     from dataclasses import dataclass
     from typing import List
-    from typegql.core.graph import Connection
+    from typegql import Connection
     from typegql.examples.library.types import Author, Category
     from typegql.examples.library.types import Book
     from typegql.examples.library import db
@@ -173,7 +173,7 @@ Run your query
 
 .. code-block:: python
 
-    from typegql.core.schema import Schema
+    from typegql import Schema
     from examples.library.query import Query
 
 
@@ -226,6 +226,24 @@ For example:
 
 Change Log
 ==========
+4.0.0 [2020-03-16]
+------------------
+- BREAKING CHANGES:
+    - `Schema` now accepts a more granular list of custom graphql types. Signature is:
+
+.. code-block:: python
+
+        def __init__(self,
+                 query: Type,
+                 mutation: Optional[Type] = None,
+                 subscription: Optional[Type] = None,
+                 scalars: Optional[GraphQLScalarMap] = None,
+                 enums: Optional[GraphQLEnumMap] = None,
+                 interfaces: Optional[GraphQLInterfaceMap] = None,
+                 query_types: Optional[GraphQLObjectTypeMap] = None,
+                 mutation_types: Optional[GraphQLInputObjectTypeMap] = None,
+                 camelcase=True):
+
 3.1.0 [2020-01-29]
 ------------------
 - fixes an issue with camelcase parameters when a `load` method is provided

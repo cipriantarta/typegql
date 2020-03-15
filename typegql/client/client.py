@@ -17,6 +17,7 @@ class Client:
 
         result = await client.execute(doc)
     """
+
     def __init__(self, url: str, auth=None, headers: Dict = None, use_json=True, timeout=None, camelcase=True):
         self.url = url
         self.session: Optional[aiohttp.ClientSession] = None
@@ -52,7 +53,7 @@ class Client:
         if not self.session:
             self.session = aiohttp.ClientSession()
 
-        if isinstance(query, DocumentNode):
+        if isinstance(query, DocumentNode) and self.dsl:
             query = self.dsl.as_string(query)
 
         payload = {

@@ -162,3 +162,9 @@ class EnumType(GraphQLEnumType):
         if not isinstance(value, self.source):
             return InvalidType('Enum value expected')
         return value.value
+
+
+GraphQLID = ID()
+GraphQLDateTime = DateTime()
+GraphQLDecimal = Decimal()
+GraphQLDictionary = Dictionary()
