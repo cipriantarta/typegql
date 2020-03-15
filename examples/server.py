@@ -16,7 +16,7 @@ from typegql.schema import Schema
 
 logger = logging.getLogger('sanic.error')
 app = Sanic(name='TypeGQL')
-schema = Schema(query=Query)  # , mutation=Mutation, subscription=Subscription)
+schema = Schema(query=Query, mutation=Mutation, subscription=Subscription)
 channels = {'books': EventEmitter()}
 
 
@@ -61,4 +61,4 @@ async def subscription(_, ws):
 
 
 if __name__ == '__main__':
-    app.run(host='localhost', port=3000, debug=True, auto_reload=False)
+    app.run(host='localhost', port=3000, debug=True)

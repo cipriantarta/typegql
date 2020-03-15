@@ -1,7 +1,8 @@
 from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass, fields, Field, is_dataclass, MISSING
-from typing import Any, Dict, Generator, get_type_hints, Mapping, Optional, Type
+from enum import Enum
+from typing import Any, Dict, Generator, get_type_hints, Mapping, Optional, Sequence, Type
 
 import graphql
 from graphql import (
@@ -20,6 +21,7 @@ from .types import ID, DateTime, Dictionary, Decimal, EnumType
 from .utils import is_connection, is_enum, is_optional, is_sequence, load, to_snake
 
 GraphQLEnumMap = Dict[str, GraphQLEnumType]
+GraphQLInterfaceMap = Dict[str, GraphQLInterfaceType]
 GraphQLObjectTypeMap = Dict[str, GraphQLObjectType]
 GraphQLScalarMap = Mapping[str, GraphQLScalarType]
 
@@ -42,7 +44,11 @@ class Helper:
 
 class Builder(metaclass=ABCMeta):
     def __init__(self,
-                 camelcase: bool = True):
+                 camelcase: bool = True,
+                 scalars: Optional[GraphQLScalarMap] = None,
+                 enums: Optional[GraphQLEnumMap] = None,
+                 interfaces: Optional[GraphQLInterfaceMap] = None,
+                 types: Optional[GraphQLObjectTypeMap] = None):
         self.camelcase = camelcase
         self.scalars: GraphQLScalarMap = {
             'ID': ID(),
@@ -54,8 +60,11 @@ class Builder(metaclass=ABCMeta):
             'Dict': Dictionary(),
             'Decimal': Decimal(),
         }
-        self.enums: GraphQLEnumMap = {}
-        self.types: GraphQLObjectTypeMap = {}
+        if scalars:
+            self.scalars.update(scalars)
+        self.enums: GraphQLEnumMap = enums or {}
+        self.interfaces = interfaces or {}
+        self.types: GraphQLObjectTypeMap = types or {}
 
     def field_name(self, field: Field) -> str:
         field_name = field.metadata.get('alias', field.name)
@@ -80,7 +89,7 @@ class Builder(metaclass=ABCMeta):
         name = self.type_name(source)
         return self.scalars.get(name)
 
-    def map_enum(self, source: Type[Any]) -> Optional[GraphQLEnumType]:
+    def map_enum(self, source: Type[Enum]) -> Optional[GraphQLEnumType]:
         if not is_enum(source):
             return None
         name = self.type_name(source)
@@ -98,20 +107,26 @@ class Builder(metaclass=ABCMeta):
             return GraphQLList(inner)
         return None
 
-    def map_type(self, source: Type[Any]) -> Optional[GraphQLObjectType]:
-        name = self.type_name(source)
+    def map_type(self,
+                 source: Type[Any],
+                 interfaces: Optional[Sequence[GraphQLInterfaceType]] = None,
+                 alias: Optional[str] = None) -> Optional[GraphQLObjectType]:
+        name = alias or self.type_name(source)
         if name in self.types:
             return self.types[name]
         description = self.type_description(source)
-        helper = Helper(source, self)
+        # helper = Helper(source, self)
         _type = graphql.GraphQLObjectType(name,
                                           description=description,
-                                          fields=helper.fields)
+                                          fields=self.fields(source),
+                                          interfaces=interfaces)
         self.types[name] = _type
         return _type
 
-    def map(self, source: Type[Any]) -> Optional[GraphQLOutputType]:
-        print('wtf', source)
+    def map(self,
+            source: Type[Any],
+            interfaces: Optional[Sequence[GraphQLInterfaceType]] = None,
+            alias: Optional[str] = None) -> Optional[GraphQLOutputType]:
         if isinstance(source, graphql.GraphQLType):
             return source
         scalar = self.map_scalar(source)
@@ -124,7 +139,7 @@ class Builder(metaclass=ABCMeta):
         if sequence:
             return sequence
 
-        _type = self.map_type(source)
+        _type = self.map_type(source, interfaces, alias)
         if _type:
             return _type
         return None

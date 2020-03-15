@@ -32,7 +32,7 @@ class Author:
     password: str = field(metadata={'skip': True})  # Ignore this field when building the schema
     gender: Optional[Gender] = None
     geo: Optional[GeoLocation] = None
-    books: Optional[List[Book]] = None
+    # books: Optional[List[Book]] = None
 
     @classmethod
     def load(cls, **data):  # can be used to manipulate / validate input data
@@ -51,7 +51,7 @@ class Book:
     """A book... for reading :|"""
 
     id: ID = field(metadata={'readonly': True})
-    author_id: ID
+    author_id: ID = field(metadata={'inputonly': True})
     title: str
     author: Optional[Author] = field(default=None, metadata={'description': 'The author of this book'})
     categories: Optional[List[Category]] = None
