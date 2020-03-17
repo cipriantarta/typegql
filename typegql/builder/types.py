@@ -161,7 +161,7 @@ class EnumType(GraphQLEnumType):
     def serialize(self, value: Any) -> Union[str, None, InvalidType]:
         if not isinstance(value, self.source):
             return InvalidType('Enum value expected')
-        return value.value
+        return value.name
 
 
 GraphQLID = ID()

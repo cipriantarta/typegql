@@ -2,9 +2,8 @@ from datetime import datetime
 from decimal import Decimal as DecimalType
 from enum import Enum
 
-from graphql import StringValueNode, FloatValueNode, ValueNode
+from graphql import FloatValueNode, StringValueNode, ValueNode
 from graphql.error import InvalidType
-
 from typegql.builder.types import DateTime, Decimal, Dictionary, EnumType
 
 
@@ -63,7 +62,7 @@ class CMYEnum(Enum):
 
 async def test__enum_type__ok():
     et = EnumType('TestEnum', RGBEnum)
-    assert et.serialize(RGBEnum.RED) == RGBEnum.RED.value
+    assert et.serialize(RGBEnum.RED) == RGBEnum.RED.name
     assert isinstance(et.serialize('RED'), InvalidType)
     assert et.values['RED'].value == RGBEnum.RED
 
