@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Sequence
 
-from graphql.pyutils import EventEmitterAsyncIterator, EventEmitter
+from graphql.pyutils import EventEmitter, EventEmitterAsyncIterator
 
 from typegql import ID
 
@@ -13,7 +13,7 @@ class Subscription:
 
     def __init__(self):
         self.emitter = EventEmitter()
-        self.queue = EventEmitterAsyncIterator(self.emitter, 'library')
+        self.queue = EventEmitterAsyncIterator(self.emitter, "library")
 
     async def on_books_added(self, data):
         return data

@@ -12,7 +12,7 @@ async def test__books_added_subscription__ok(schema):
     """
 
     subscription = await schema.subscribe(query)
-    assert hasattr(subscription, 'iterator')
+    assert hasattr(subscription, "iterator")
     assert inspect.isasyncgen(subscription.iterator)
 
     mutation = """
@@ -26,14 +26,14 @@ async def test__books_added_subscription__ok(schema):
         return message
 
     task = asyncio.create_task(on_message())
-    await asyncio.sleep(.1)
+    await asyncio.sleep(0.1)
     result = await schema.run(mutation)
     subscription_result = await asyncio.wait_for(task, 5)
 
     assert isinstance(result, ExecutionResult)
     assert isinstance(subscription_result, ExecutionResult)
 
-    assert result.data['createBooks'] == subscription_result.data['booksAdded']
+    assert result.data["createBooks"] == subscription_result.data["booksAdded"]
 
 
 async def test__authors_added_subscription__ok(schema):
@@ -44,7 +44,7 @@ async def test__authors_added_subscription__ok(schema):
     """
 
     subscription = await schema.subscribe(query)
-    assert hasattr(subscription, 'iterator')
+    assert hasattr(subscription, "iterator")
     assert inspect.isasyncgen(subscription.iterator)
 
     mutation = """
@@ -63,11 +63,11 @@ async def test__authors_added_subscription__ok(schema):
         return message
 
     task = asyncio.create_task(on_message())
-    await asyncio.sleep(.1)
+    await asyncio.sleep(0.1)
     result = await schema.run(mutation)
     subscription_result = await asyncio.wait_for(task, 5)
 
     assert isinstance(result, ExecutionResult)
     assert isinstance(subscription_result, ExecutionResult)
 
-    assert result.data['createAuthors'] == subscription_result.data['authorsAdded']
+    assert result.data["createAuthors"] == subscription_result.data["authorsAdded"]

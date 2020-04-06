@@ -1,0 +1,54 @@
+default_stages: [commit]
+default_language_version:
+  python: python3.8
+
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v2.5.0
+  hooks:
+  - id: debug-statements
+
+- repo: https://github.com/ambv/black
+  rev: stable
+  hooks:
+  - id: black
+
+- repo: https://github.com/asottile/seed-isort-config
+  rev: v2.1.0
+  hooks:
+  - id: seed-isort-config
+
+- repo: https://github.com/timothycrosley/isort
+  rev: 4.3.21-2
+  hooks:
+  - id: isort
+
+- repo: https://gitlab.com/pycqa/flake8
+  rev: 3.7.9
+  hooks:
+  - id: flake8
+    additional_dependencies: [
+      '-e', 'git+https://github.com/pycqa/pyflakes@1911c20#egg=pyflakes',
+      '-e', 'git+https://github.com/pycqa/pycodestyle@d219c68#egg=pycodestyle',
+    ]
+
+- repo: https://github.com/pycqa/bandit
+  rev: 1.6.2
+  hooks:
+  - id: bandit
+    stages: [push]
+    args:
+    - --exclude
+    - tests/
+
+- repo: local
+  hooks:
+  - id: test
+    name: tests
+    entry: poetry
+    language: system
+    pass_filenames: false
+    stages: [push]
+    args:
+    - run
+    - pytest

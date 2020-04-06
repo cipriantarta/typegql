@@ -1,5 +1,5 @@
 # flake8: noqa
-TEMPLATE = '''
+TEMPLATE = """
 <!DOCTYPE html>
 <html>
   <head>
@@ -70,4 +70,4 @@ TEMPLATE = '''
     </script>
   </body>
 </html>
-'''
+"""

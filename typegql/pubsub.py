@@ -2,8 +2,7 @@ from typing import Optional
 
 from graphql.pyutils import EventEmitter, EventEmitterAsyncIterator
 
-
-__all__ = ('pubsub',)
+__all__ = ("pubsub",)
 
 
 class _PubSub:

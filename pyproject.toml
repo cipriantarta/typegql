@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "typegql"
-version = "4.0.1"
+version = "4.0.2"
 description = "A Python GraphQL library that makes use of type hinting and concurrency support with the new async/await syntax."
 authors = ["Ciprian Tarta <ciprian@cipriantarta.ro>"]
 license = "MIT"
@@ -37,6 +37,8 @@ flake8-quotes = "^2.1.1"
 bandit = "^1.6.2"
 ipython = "^7.13.0"
 pudb = "^2019.2"
+black = "^19.10b0"
+isort = "^4.3.21"
 
 [tool.poetry.extras]
 client = ["aiohttp", "cchardet"]

@@ -226,6 +226,10 @@ For example:
 
 Change Log
 ==========
+4.0.2 [2020-04-06]
+------------------
+- updates graphql-core to 3.1.0
+
 4.0.1 [2020-03-17]
 ------------------
 - fixes enum return value

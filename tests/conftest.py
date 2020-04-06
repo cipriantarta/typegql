@@ -1,18 +1,18 @@
 import pytest
 from graphql import get_introspection_query
 
-from typegql.schema import Schema
-from examples.library.query import Query
 from examples.library.mutation import Mutation
+from examples.library.query import Query
 from examples.library.subscription import Subscription
+from typegql.schema import Schema
 
 
 def pytest_collection_modifyitems(items):
     for item in items:
-        if not hasattr(item, 'fixturenames'):
-            setattr(item, 'fixturenames', list())
-        if not hasattr(item, 'obj'):
-            setattr(item, 'obj', None)
+        if not hasattr(item, "fixturenames"):
+            setattr(item, "fixturenames", list())
+        if not hasattr(item, "obj"):
+            setattr(item, "obj", None)
         item.add_marker(pytest.mark.asyncio)
 
 

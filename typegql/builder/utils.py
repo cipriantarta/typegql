@@ -1,4 +1,4 @@
-from dataclasses import Field, MISSING
+from dataclasses import MISSING, Field
 from enum import Enum
 from typing import Any, Callable, Dict, List, MutableSequence, Sequence, Union
 
@@ -23,30 +23,36 @@ def is_enum(_type: Any) -> bool:
 
 def is_connection(_type: Any) -> bool:
     try:
-        return _type.__origin__ is IConnection or issubclass(_type.__origin__, IConnection)
+        return _type.__origin__ is IConnection or issubclass(
+            _type.__origin__, IConnection
+        )
     except (TypeError, AttributeError):
         return False
 
 
 def is_optional(_type: Any) -> bool:
-    if hasattr(_type, '__origin__') and _type.__origin__ == Union:
+    if hasattr(_type, "__origin__") and _type.__origin__ == Union:
         if len(_type.__args__) == 2 and isinstance(None, _type.__args__[1]):
             return True
     return False
 
 
 def is_readonly(field: Field) -> bool:
-    return field.metadata.get('readonly', False)
+    return field.metadata.get("readonly", False)
 
 
 def is_inputonly(field: Field) -> bool:
-    return field.metadata.get('inputonly', False)
+    return field.metadata.get("inputonly", False)
 
 
 def is_required(field: Field) -> bool:
-    return all([field.default is MISSING,
-                field.default_factory is MISSING,  # type: ignore
-                not is_optional(field.type)])
+    return all(
+        [
+            field.default is MISSING,
+            field.default_factory is MISSING,  # type: ignore
+            not is_optional(field.type),
+        ]
+    )
 
 
 def to_snake(arguments: Dict) -> Dict[str, Any]:

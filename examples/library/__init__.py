@@ -2,7 +2,8 @@
 
 import json
 
-db = json.loads('''
+db = json.loads(
+    """
 {
   "authors": [
     {"id": 1, "name": "J.R.R. Tolkien", "gender": "male", "geo": {"latitude": 40.697403, "longitude": -74.120107}},
@@ -19,4 +20,5 @@ db = json.loads('''
     {"id": 3, "name": "Epic"}
   ]
 }
-''')
+"""
+)

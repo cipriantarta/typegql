@@ -2,10 +2,20 @@ import collections
 import decimal
 from functools import partial
 
-from graphql import GraphQLField, print_ast, ast_from_value, GraphQLNonNull, GraphQLInputField, GraphQLList, \
-    GraphQLEnumType, GraphQLInputObjectType, OperationType, GraphQLString
+from graphql import (
+    GraphQLEnumType,
+    GraphQLField,
+    GraphQLInputField,
+    GraphQLInputObjectType,
+    GraphQLList,
+    GraphQLNonNull,
+    GraphQLString,
+    OperationType,
+    ast_from_value,
+    print_ast,
+)
 from graphql.language import ast
-from graphql.pyutils import snake_to_camel, FrozenList
+from graphql.pyutils import FrozenList, snake_to_camel
 
 
 class DSLField:
@@ -18,11 +28,15 @@ class DSLField:
     def select(self, *fields):
         selection_nodes = list(selections(*fields))
         if not self.ast_field.selection_set:
-            self.ast_field.selection_set = ast.SelectionSetNode(selections=FrozenList(selection_nodes))
+            self.ast_field.selection_set = ast.SelectionSetNode(
+                selections=FrozenList(selection_nodes)
+            )
             return self
 
         selection_nodes.extend(self.ast_field.selection_set.selections)
-        self.ast_field.selection_set = ast.SelectionSetNode(selections=FrozenList(selection_nodes))
+        self.ast_field.selection_set = ast.SelectionSetNode(
+            selections=FrozenList(selection_nodes)
+        )
         return self
 
     def __call__(self, *args, **kwargs):
@@ -39,14 +53,13 @@ class DSLField:
         for name, value in kwargs.items():
             arg = self.field.args.get(name)
             if not arg:
-                raise ValueError(f'Invalid argument {name} for field {self.name}')
+                raise ValueError(f"Invalid argument {name} for field {self.name}")
             arg_type_serializer = get_arg_serializer(arg.type)
             value = arg_type_serializer(value)
 
             argument_nodes.append(
                 ast.ArgumentNode(
-                    name=ast.NameNode(value=name),
-                    value=get_ast_value(value)
+                    name=ast.NameNode(value=name), value=get_ast_value(value)
                 )
             )
         self.ast_field.arguments = FrozenList(argument_nodes)
@@ -85,7 +98,7 @@ class DSLType(object):
             name = snake_to_camel(name, upper=False)
         if name in self.type.fields:
             return name, self.type.fields[name]
-        raise KeyError('Field {} doesnt exist in type {}.'.format(name, self.type.name))
+        raise KeyError("Field {} doesnt exist in type {}.".format(name, self.type.name))
 
 
 class DSLSchema(object):
@@ -99,12 +112,14 @@ class DSLSchema(object):
 
     def query(self, *fields, operation=OperationType.QUERY) -> ast.DocumentNode:
         return ast.DocumentNode(
-            definitions=[ast.OperationDefinitionNode(
-                operation=operation,
-                selection_set=ast.SelectionSetNode(
-                    selections=list(selections(*fields))
+            definitions=[
+                ast.OperationDefinitionNode(
+                    operation=operation,
+                    selection_set=ast.SelectionSetNode(
+                        selections=list(selections(*fields))
+                    ),
                 )
-            )]
+            ]
         )
 
     def mutation(self, *fields) -> ast.DocumentNode:
@@ -197,5 +212,5 @@ def get_arg_serializer(arg_type):
 def serialize_value(arg_type, value):
     return ast_from_value(
         str(value) if arg_type.serialize(value) is None else arg_type.serialize(value),
-        arg_type
+        arg_type,
     )
